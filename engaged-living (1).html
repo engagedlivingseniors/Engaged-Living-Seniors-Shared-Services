@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Engaged Living – Caregiver Portal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Georgia',serif;background:#f0ede8;min-height:100vh;}
+  input,select,textarea,button{font-family:'Georgia',serif;}
+  ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:#f0f0f0;} ::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useCallback,useRef}=React;
+
+// ─── localStorage Storage ─────────────────────────────────────────────────────
+const SK={CLIENTS:"els_clients",VISITS:"els_visits",COMPLETIONS:"els_completions",USERS:"els_users",SIGNATURES:"els_signatures"};
+function dbGet(key){try{const v=localStorage.getItem(key);return v?JSON.parse(v):null;}catch{return null;}}
+function dbSet(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch(e){console.error(e);}}
+
+// ─── Default Data ─────────────────────────────────────────────────────────────
+const DEFAULT_CLIENTS=[
+  {id:"c1",  name:"Richard Barkin",  room:"1209",location:"Renaissance on Peachtree",  notes:"Catheter care. Night bag↔Day bag AM/PM.",active:true},
+  {id:"c2",  name:"Aviva Waitzman",  room:"502", location:"Renaissance on Peachtree",  notes:"Meal deliveries Mon/Wed/Fri. Shower + laundry evening.",active:true},
+  {id:"c3",  name:"Peter Munton",    room:"414", location:"Renaissance on Peachtree",  notes:"Has cat. Feed daily. Safety checks all visits.",active:true},
+  {id:"c4",  name:"Nancy Gillam",    room:"815", location:"Renaissance on Peachtree",  notes:"⚠ MORNING VISIT REQUIRES BOTH CAREGIVERS. Meds AM+PM.",active:true},
+  {id:"c5",  name:"William Gillam",  room:"815", location:"Renaissance on Peachtree",  notes:"Same room as Nancy Gillam. Morning with BOTH caregivers.",active:true},
+  {id:"c6",  name:"Richard Lawry",   room:"1203",location:"Renaissance on Peachtree",  notes:"Daily morning routine – dressing & grooming. Shower included Mon/Wed/Fri. Medication reminder every morning.",active:true},
+  {id:"c7",  name:"Bill Cadle",      room:"1504",location:"Renaissance on Peachtree",  notes:"Eye drops daily. BP check every Monday.",active:true},
+  {id:"c8",  name:"Albert Moore",    room:"914", location:"Renaissance on Peachtree",  notes:"Needs assistance getting out of bed every morning.",active:true},
+  {id:"c9",  name:"Uma Lal",         room:"1502",location:"Renaissance on Peachtree",  notes:"90-minute exception visit Wed & Fri only.",active:true},
+  {id:"c10", name:"Bobby Keidan",    room:"705", location:"Renaissance on Peachtree",  notes:"Morning shower included daily. Safety check midday.",active:true},
+  {id:"c11", name:"Val Jean Wright", room:"1409",location:"Renaissance on Peachtree",  notes:"Shower only on Tuesdays and Thursdays.",active:true},
+  {id:"c12", name:"Kerry Danoff",    room:"1212",location:"Renaissance on Peachtree",  notes:"All meals brought to room. Toileting with meals.",active:true},
+  {id:"c13", name:"Lucy Shingleton", room:"1404",location:"Renaissance on Peachtree",  notes:"Sunday evening shower includes shampoo.",active:true},
+  {id:"c14", name:"Michael Solis",   room:"1605",location:"Renaissance on Peachtree",  notes:"One visit per week – Thursday afternoon only.",active:true},
+  {id:"c15", name:"Hill Robertson",  room:"712", location:"Renaissance on Peachtree",  notes:"Safety check visits only – 15 min each.",active:true},
+  {id:"c16", name:"Ruth Hydrick",    room:"206", location:"Renaissance on Peachtree",  notes:"3:30 PM visit at shift change – confirm coverage.",active:true},
+  {id:"c17", name:"Mary Overton",    room:"905", location:"Renaissance on Peachtree",  notes:"Evening visit 7:15 PM. Safety check 9:30 PM nightly.",active:true},
+  {id:"c18", name:"Judith Felentzer",room:"1210",location:"Renaissance on Peachtree",  notes:"Eye drops 4x daily.",active:true},
+  {id:"c19", name:"Earl Hallal",     room:"1509",location:"The Piedmont at Buckhead",  notes:"Shares room with Nancy Hallal. One caregiver serves both.",active:true},
+  {id:"c20", name:"Nancy Hallal",    room:"1509",location:"The Piedmont at Buckhead",  notes:"Shares room with Earl Hallal. One caregiver serves both.",active:true},
+];
+
+const DEFAULT_VISITS=[
+  {id:"v1",  clientId:"c1",  time:"7:30 AM",  caregiver:"CG2",days:"Mon-Fri",            task:"Dressing, Toileting, Catheter – night→day bag",  duration:30,requiresBoth:false},
+  {id:"v2",  clientId:"c1",  time:"8:30 AM",  caregiver:"CG2",days:"Sat-Sun",            task:"Dressing, Toileting, Catheter – night→day bag",  duration:30,requiresBoth:false},
+  {id:"v3",  clientId:"c1",  time:"8:00 PM",  caregiver:"CG1",days:"Mon-Fri",            task:"Dressing, Toileting, Change day→night bag",      duration:30,requiresBoth:false},
+  {id:"v4",  clientId:"c1",  time:"8:30 PM",  caregiver:"CG1",days:"Sat-Sun",            task:"Dressing, Toileting, Change day→night bag",      duration:30,requiresBoth:false},
+  {id:"v5",  clientId:"c2",  time:"9:00 AM",  caregiver:"CG1",days:"Mon/Wed/Fri",        task:"Morning meal delivery",                          duration:15,requiresBoth:false},
+  {id:"v6",  clientId:"c2",  time:"11:30 AM", caregiver:"CG2",days:"Mon/Wed/Fri",        task:"Midday meal delivery",                           duration:15,requiresBoth:false},
+  {id:"v7",  clientId:"c2",  time:"5:45 PM",  caregiver:"CG2",days:"Mon/Wed/Fri",        task:"Shower assistance, Laundry",                     duration:30,requiresBoth:false},
+  {id:"v8",  clientId:"c3",  time:"7:00 AM",  caregiver:"CG2",days:"Daily",              task:"Safety check, Toileting, Feed cat",              duration:15,requiresBoth:false},
+  {id:"v9",  clientId:"c3",  time:"11:00 AM", caregiver:"CG1",days:"Mon/Sat/Sun",        task:"Safety check, Toileting, Housekeeping",          duration:15,requiresBoth:false},
+  {id:"v10", clientId:"c3",  time:"11:15 AM", caregiver:"CG2",days:"Tue/Thu",            task:"Safety check, Toileting, Housekeeping",          duration:15,requiresBoth:false},
+  {id:"v11", clientId:"c3",  time:"12:30 PM", caregiver:"CG1",days:"Wed/Fri",            task:"Safety check, Toileting, Housekeeping",          duration:15,requiresBoth:false},
+  {id:"v12", clientId:"c3",  time:"2:30 PM",  caregiver:"CG1",days:"Daily",              task:"Safety check, Toileting",                       duration:15,requiresBoth:false},
+  {id:"v13", clientId:"c3",  time:"6:30 PM",  caregiver:"CG2",days:"Mon/Wed/Fri",        task:"Safety check, Toileting, Housekeeping",          duration:15,requiresBoth:false},
+  {id:"v14", clientId:"c3",  time:"7:00 PM",  caregiver:"CG1",days:"Tue/Thu/Sat/Sun",   task:"Safety check, Toileting, Housekeeping",          duration:15,requiresBoth:false},
+  {id:"v15", clientId:"c4",  time:"7:30 AM",  caregiver:"BOTH",days:"Daily",             task:"BOTH CGs – Dressing, Toileting, Escort to breakfast, Meds", duration:30,requiresBoth:true},
+  {id:"v15b",clientId:"c4",  time:"9:00 AM",  caregiver:"CG1",days:"Daily",              task:"Check-in, Toileting",                            duration:15,requiresBoth:false},
+  {id:"v15c",clientId:"c4",  time:"11:30 AM", caregiver:"CG2",days:"Daily",              task:"Feeding assistance, Toileting",                  duration:15,requiresBoth:false},
+  {id:"v16", clientId:"c4",  time:"12:00 PM", caregiver:"CG1",days:"Daily",              task:"Feeding assistance follow-up, Toileting",        duration:15,requiresBoth:false},
+  {id:"v18", clientId:"c4",  time:"5:00 PM",  caregiver:"CG1",days:"Daily",              task:"Toileting, Check-in",                            duration:15,requiresBoth:false},
+  {id:"v19", clientId:"c4",  time:"9:00 PM",  caregiver:"CG1",days:"Daily",              task:"Toileting, Bed prep, Meds",                      duration:30,requiresBoth:false},
+  {id:"v20", clientId:"c5",  time:"8:00 AM",  caregiver:"BOTH",days:"Daily",             task:"BOTH CGs – Dressing, Toileting, Escort to breakfast", duration:30,requiresBoth:true},
+  {id:"v22", clientId:"c6",  time:"8:30 AM",  caregiver:"CG2",days:"Mon/Wed/Fri",        task:"Morning routine – Shower, Dressing, Grooming, Medication reminder",duration:45,requiresBoth:false},
+  {id:"v22b",clientId:"c6",  time:"8:30 AM",  caregiver:"CG2",days:"Tue/Thu/Sat/Sun",   task:"Morning routine – Dressing, Grooming, Medication reminder",        duration:30,requiresBoth:false},
+  {id:"v24", clientId:"c7",  time:"10:00 AM", caregiver:"CG2",days:"Monday",             task:"Medication reminder, Eye drops, BP check",        duration:30,requiresBoth:false},
+  {id:"v25", clientId:"c7",  time:"10:00 AM", caregiver:"CG2",days:"Tue-Sun",            task:"Medication reminder, Eye drops",                  duration:15,requiresBoth:false},
+  {id:"v26", clientId:"c8",  time:"8:30 AM",  caregiver:"CG1",days:"Daily",              task:"Get out of bed, Dressing, Toileting",             duration:30,requiresBoth:false},
+  {id:"v27", clientId:"c8",  time:"12:15 PM", caregiver:"CG1",days:"Daily",              task:"Toileting",                                      duration:15,requiresBoth:false},
+  {id:"v28", clientId:"c8",  time:"5:15 PM",  caregiver:"CG2",days:"Daily",              task:"Toileting",                                      duration:15,requiresBoth:false},
+  {id:"v29", clientId:"c8",  time:"9:00 PM",  caregiver:"CG2",days:"Daily",              task:"Prepare for bed, Toileting",                     duration:30,requiresBoth:false},
+  {id:"v30", clientId:"c9",  time:"10:30 AM", caregiver:"CG1",days:"Wed/Fri",            task:"Laundry, Shower, Housekeeping (90 min)",          duration:90,requiresBoth:false},
+  {id:"v31", clientId:"c10", time:"7:00 AM",  caregiver:"CG1",days:"Daily",              task:"Dressing, Shower, Escort to breakfast, ADLs",    duration:30,requiresBoth:false},
+  {id:"v32", clientId:"c10", time:"12:15 PM", caregiver:"CG2",days:"Daily",              task:"Safety check",                                   duration:15,requiresBoth:false},
+  {id:"v33", clientId:"c10", time:"8:00 PM",  caregiver:"CG2",days:"Daily",              task:"Dressing, Nighttime ADLs",                       duration:30,requiresBoth:false},
+  {id:"v34", clientId:"c11", time:"10:45 AM", caregiver:"CG1",days:"Tue/Thu",            task:"Shower assistance",                              duration:30,requiresBoth:false},
+  {id:"v35", clientId:"c12", time:"7:30 AM",  caregiver:"CG1",days:"Daily",              task:"Help get going, Morning ADLs, Bring breakfast",   duration:30,requiresBoth:false},
+  {id:"v36", clientId:"c12", time:"12:00 PM", caregiver:"CG2",days:"Daily",              task:"Bring lunch, Toileting",                         duration:15,requiresBoth:false},
+  {id:"v37", clientId:"c12", time:"5:30 PM",  caregiver:"CG1",days:"Daily",              task:"Bring dinner, Toileting",                        duration:15,requiresBoth:false},
+  {id:"v38", clientId:"c12", time:"8:30 PM",  caregiver:"CG1",days:"Mon-Fri",            task:"Nighttime assist, Prepare for bed",               duration:30,requiresBoth:false},
+  {id:"v39", clientId:"c12", time:"8:30 PM",  caregiver:"CG2",days:"Sat-Sun",            task:"Nighttime assist, Prepare for bed",               duration:30,requiresBoth:false},
+  {id:"v40", clientId:"c13", time:"8:30 AM",  caregiver:"CG2",days:"Mon-Fri",            task:"Medication reminder, Escort to breakfast",        duration:15,requiresBoth:false},
+  {id:"v41", clientId:"c13", time:"9:00 AM",  caregiver:"CG1",days:"Saturday",           task:"Medication reminder, Escort to breakfast",        duration:15,requiresBoth:false},
+  {id:"v42", clientId:"c13", time:"8:30 AM",  caregiver:"CG2",days:"Sunday",             task:"Medication reminder, Escort to breakfast",        duration:15,requiresBoth:false},
+  {id:"v43", clientId:"c13", time:"7:30 PM",  caregiver:"CG1",days:"Sunday",             task:"Shower, Shampoo",                                duration:30,requiresBoth:false},
+  {id:"v44", clientId:"c14", time:"2:00 PM",  caregiver:"CG1",days:"Thursday",           task:"Shower assistance",                              duration:30,requiresBoth:false},
+  // Hill Robertson removed from schedule
+  {id:"v51", clientId:"c16", time:"10:30 AM", caregiver:"CG1",days:"Mon/Tue/Thu/Sat/Sun",task:"Escort outside for smoke break",                 duration:15,requiresBoth:false},
+  {id:"v52", clientId:"c16", time:"10:30 AM", caregiver:"CG2",days:"Wed/Fri",            task:"Escort outside for smoke break",                 duration:15,requiresBoth:false},
+  {id:"v53", clientId:"c16", time:"3:30 PM",  caregiver:"CG1",days:"Daily",              task:"Escort outside for smoke break",                 duration:15,requiresBoth:false},
+  {id:"v54", clientId:"c17", time:"8:30 AM",  caregiver:"CG2",days:"Daily",              task:"Morning routine – Toileting, Dressing, Help get going", duration:30,requiresBoth:false},
+  {id:"v55", clientId:"c17", time:"7:15 PM",  caregiver:"CG2",days:"Daily",              task:"Prepare for bed, Evening routine",                duration:30,requiresBoth:false},
+  {id:"v56", clientId:"c17", time:"9:30 PM",  caregiver:"CG1",days:"Daily",              task:"Safety check before end of shift",                duration:15,requiresBoth:false},
+  {id:"v57", clientId:"c18", time:"9:15 AM",  caregiver:"CG1",days:"Daily",              task:"Eye drop assistance",                            duration:15,requiresBoth:false},
+  {id:"v58", clientId:"c18", time:"1:15 PM",  caregiver:"CG1",days:"Daily",              task:"Eye drop assistance",                            duration:15,requiresBoth:false},
+  {id:"v59", clientId:"c18", time:"5:00 PM",  caregiver:"CG2",days:"Daily",              task:"Eye drop assistance",                            duration:15,requiresBoth:false},
+  {id:"v60", clientId:"c18", time:"8:30 PM",  caregiver:"CG2",days:"Mon-Fri",            task:"Eye drop assistance",                            duration:15,requiresBoth:false},
+  {id:"v61", clientId:"c18", time:"8:15 PM",  caregiver:"CG1",days:"Sat-Sun",            task:"Eye drop assistance",                            duration:15,requiresBoth:false},
+  {id:"v62", clientId:"c19", time:"9:45 AM",  caregiver:"CG1",days:"Daily",              task:"Dressing, Toileting, Shower (both clients)",     duration:30,requiresBoth:false},
+  {id:"v63", clientId:"c19", time:"1:00 PM",  caregiver:"CG2",days:"Daily",              task:"Toileting (both clients)",                       duration:15,requiresBoth:false},
+  {id:"v64", clientId:"c19", time:"6:15 PM",  caregiver:"CG1",days:"Daily",              task:"Dressing, Prepare for bed, Toileting (both)",    duration:30,requiresBoth:false},
+  {id:"v65", clientId:"c20", time:"9:45 AM",  caregiver:"CG1",days:"Daily",              task:"Dressing, Toileting, Shower (both clients)",     duration:30,requiresBoth:false},
+  {id:"v66", clientId:"c20", time:"1:00 PM",  caregiver:"CG2",days:"Daily",              task:"Toileting (both clients)",                       duration:15,requiresBoth:false},
+  {id:"v67", clientId:"c20", time:"6:15 PM",  caregiver:"CG1",days:"Daily",              task:"Dressing, Prepare for bed, Toileting (both)",    duration:30,requiresBoth:false},
+];
+
+const DEFAULT_USERS=[
+  {id:"u1",fullName:"Caregivers",  role:"caregiver",  pin:"3755"},
+  {id:"u3",fullName:"Supervisor",  role:"supervisor", pin:"3579"},
+  {id:"u4",fullName:"Admin / Nurse",role:"admin",     pin:"3355"},
+];
+
+// ─── Historical Seeder ────────────────────────────────────────────────────────
+const CLIENT_START_DATES={c1:"2023-12-01",c2:"2024-01-25",c3:"2024-12-01",c4:"2025-10-07",c5:"2026-02-01",c6:"2025-11-03",c7:"2025-11-11",c8:"2025-10-30",c9:"2024-12-11",c10:"2025-07-02",c11:"2025-05-22",c12:"2025-03-06",c13:"2023-12-01",c14:"2026-02-05",c15:"2025-01-15",c16:"2026-02-01",c19:"2026-02-21",c20:"2026-02-21"};
+const SEED_THROUGH="2026-03-03";
+function _dow(ds){return["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(ds+"T12:00:00Z").getUTCDay()];}
+function _sched(days,ds){const dw=_dow(ds);if(days==="Daily")return true;if(days==="Monday")return dw==="Mon";if(days==="Thursday")return dw==="Thu";if(days==="Saturday")return dw==="Sat";if(days==="Sunday")return dw==="Sun";if(days==="Mon-Fri")return["Mon","Tue","Wed","Thu","Fri"].includes(dw);if(days==="Tue-Fri")return["Tue","Wed","Thu","Fri"].includes(dw);if(days==="Sat-Sun")return["Sat","Sun"].includes(dw);if(days==="Tue-Sun")return["Tue","Wed","Thu","Fri","Sat","Sun"].includes(dw);return days.split("/").map(p=>p.trim()).includes(dw);}
+function _addDay(ds){const d=new Date(ds+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+1);return d.toISOString().split("T")[0];}
+function generateHistoricalCompletions(visits){const out=[];for(const[cid,start]of Object.entries(CLIENT_START_DATES)){const cv=visits.filter(v=>v.clientId===cid);let d=start;while(d<=SEED_THROUGH){for(const v of cv)if(_sched(v.days,d))out.push({id:`${d}-${v.id}`,date:d,visitId:v.id,completedBy:"u1",completedAt:`${d}T12:00:00.000Z`,initials:""});d=_addDay(d);}}return out;}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const today=()=>new Date().toISOString().split("T")[0];
+const fmtDate=(d)=>new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"});
+const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const ROLE_COLOR={admin:"#c0392b",supervisor:"#2471a3",caregiver:"#1a7a4a"};
+const ROLE_LABEL={admin:"Admin / Nurse",supervisor:"Supervisor",caregiver:"Caregivers"};
+const LOC_COLOR={"Renaissance on Peachtree":"#2471a3","The Piedmont at Buckhead":"#8e44ad"};
+const CG_COLOR={CG1:"#1a7a4a",CG2:"#e67e22",BOTH:"#c0392b"};
+function isScheduledOn(visit,dateStr){const dow=DOW[new Date(dateStr+"T00:00:00").getDay()];const days=visit.days;if(days==="Daily")return true;if(days==="Monday")return dow==="Mon";if(days==="Thursday")return dow==="Thu";if(days==="Saturday")return dow==="Sat";if(days==="Sunday")return dow==="Sun";if(days==="Mon-Fri")return["Mon","Tue","Wed","Thu","Fri"].includes(dow);if(days==="Tue-Fri")return["Tue","Wed","Thu","Fri"].includes(dow);if(days==="Tue-Sun")return["Tue","Wed","Thu","Fri","Sat","Sun"].includes(dow);if(days==="Sat-Sun")return["Sat","Sun"].includes(dow);if(days==="Mon-Sat")return["Mon","Tue","Wed","Thu","Fri","Sat"].includes(dow);return days.split("/").some(p=>dow.startsWith(p.trim().slice(0,3)));}
+function parseTime(t){const[tp,ap]=t.split(" ");let[h,m]=tp.split(":").map(Number);if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;return h*60+m;}
+function getWeekRange(dateStr){const d=new Date(dateStr+"T00:00:00");const ws=new Date(d);ws.setDate(d.getDate()-d.getDay());const we=new Date(ws);we.setDate(ws.getDate()+6);return{ws:ws.toISOString().split("T")[0],we:we.toISOString().split("T")[0]};}
+
+// ─── Signature Canvas ─────────────────────────────────────────────────────────
+function SignatureCanvas({onSave,onCancel,existing}){
+  const canvasRef=useRef(null);
+  const[drawing,setDrawing]=useState(false);
+  const[hasStrokes,setHasStrokes]=useState(false);
+  useEffect(()=>{const cv=canvasRef.current,ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.strokeStyle="#1a1a1c";ctx.lineWidth=2.5;ctx.lineCap="round";ctx.lineJoin="round";if(existing){const img=new Image();img.onload=()=>ctx.drawImage(img,0,0);img.src=existing;setHasStrokes(true);}},[]);
+  const getPos=(e,cv)=>{const r=cv.getBoundingClientRect(),sx=cv.width/r.width,sy=cv.height/r.height,cx=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY;return{x:(cx-r.left)*sx,y:(cy-r.top)*sy};};
+  const start=(e)=>{e.preventDefault();const cv=canvasRef.current,ctx=cv.getContext("2d"),p=getPos(e,cv);ctx.beginPath();ctx.moveTo(p.x,p.y);setDrawing(true);setHasStrokes(true);};
+  const move=(e)=>{e.preventDefault();if(!drawing)return;const cv=canvasRef.current,ctx=cv.getContext("2d"),p=getPos(e,cv);ctx.lineTo(p.x,p.y);ctx.stroke();};
+  const end=(e)=>{e.preventDefault();setDrawing(false);};
+  const clear=()=>{const cv=canvasRef.current,ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);setHasStrokes(false);};
+  return(<div style={{background:"#fff",borderRadius:12,padding:18,boxShadow:"0 4px 20px rgba(0,0,0,0.12)"}}>
+    <div style={{fontSize:12,color:"#888",marginBottom:8}}>Draw your signature below</div>
+    <canvas ref={canvasRef} width={420} height={130} style={{border:"2px solid #e0e0e0",borderRadius:8,cursor:"crosshair",width:"100%",touchAction:"none",display:"block"}}
+      onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end} onTouchStart={start} onTouchMove={move} onTouchEnd={end}/>
+    <div style={{display:"flex",gap:8,marginTop:10}}>
+      <button onClick={()=>hasStrokes&&onSave(canvasRef.current.toDataURL())} style={{...PB,opacity:hasStrokes?1:0.4}}>Save</button>
+      <button onClick={clear} style={GB}>Clear</button>
+      <button onClick={onCancel} style={GB}>Cancel</button>
+    </div>
+  </div>);
+}
+
+// ─── App Root ─────────────────────────────────────────────────────────────────
+function App(){
+  const[user,setUser]=useState(null);
+  const[clients,setClients]=useState([]);
+  const[visits,setVisits]=useState([]);
+  const[completions,setCompletions]=useState([]);
+  const[users,setUsers]=useState([]);
+  const[signatures,setSignatures]=useState({});
+  const[loaded,setLoaded]=useState(false);
+  const[view,setView]=useState("tasks");
+  const[selectedDate,setSelectedDate]=useState(today());
+
+  useEffect(()=>{
+    const c=dbGet(SK.CLIENTS)||DEFAULT_CLIENTS;
+    const v=dbGet(SK.VISITS)||DEFAULT_VISITS;
+    const u=dbGet(SK.USERS)||DEFAULT_USERS;
+    const s=dbGet(SK.SIGNATURES)||{};
+    setClients(c);setVisits(v);setUsers(u);setSignatures(s);
+    let co=dbGet(SK.COMPLETIONS);
+    if(co===null){co=generateHistoricalCompletions(v);dbSet(SK.COMPLETIONS,co);}
+    setCompletions(co);setLoaded(true);
+  },[]);
+
+  const saveClients=useCallback((d)=>{setClients(d);dbSet(SK.CLIENTS,d);},[]);
+  const saveVisits=useCallback((d)=>{setVisits(d);dbSet(SK.VISITS,d);},[]);
+  const saveCompletions=useCallback((d)=>{setCompletions(d);dbSet(SK.COMPLETIONS,d);},[]);
+  const saveUsers=useCallback((d)=>{setUsers(d);dbSet(SK.USERS,d);},[]);
+  const saveSignatures=useCallback((d)=>{setSignatures(d);dbSet(SK.SIGNATURES,d);},[]);
+
+  if(!loaded)return<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#1a1a1c",color:"#f0ede8",fontSize:18}}>Loading Engaged Living…</div>;
+  if(!user)return<Login users={users} onLogin={u=>{setUser(u);setView("tasks");}}/>;
+
+  const canAdmin=user.role==="admin";
+  const canSupervise=user.role==="admin"||user.role==="supervisor";
+  const navItems=[
+    {key:"tasks",   label:"Daily Tasks",    icon:"✓"},
+    {key:"signoff", label:"Sign-Off Sheet", icon:"✍"},
+    ...(canSupervise?[{key:"reports",label:"Reports",icon:"▤"}]:[]),
+    ...(canAdmin?[{key:"clients",label:"Clients",icon:"♥"},{key:"schedule",label:"Schedule",icon:"⏰"},{key:"team",label:"Team",icon:"⚇"}]:[]),
+  ];
+
+  return(<div style={{minHeight:"100vh",background:"#f0ede8",display:"flex"}}>
+    <aside style={{width:225,background:"#1a1a1c",color:"#f0ede8",display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,height:"100vh",zIndex:100,overflowY:"auto"}}>
+      <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #2e2e30"}}>
+        <img src="https://www.engagedlivingseniors.com/wp-content/uploads/2024/05/FullLogo_NoBuffer-2.png" alt="Engaged Living" style={{width:"100%",maxWidth:180,filter:"brightness(0) invert(1)",display:"block"}}/>
+        <div style={{fontSize:10,letterSpacing:2,color:"#666",textTransform:"uppercase",marginTop:10}}>Caregiver Portal</div>
+      </div>
+      <div style={{padding:"8px 0",flex:1}}>
+        {navItems.map(n=>(<button key={n.key} onClick={()=>setView(n.key)} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"11px 20px",background:view===n.key?"#2a2a2c":"transparent",color:view===n.key?"#fff":"#999",border:"none",cursor:"pointer",fontSize:14,textAlign:"left",borderLeft:view===n.key?"3px solid #c0392b":"3px solid transparent"}}>
+          <span style={{fontSize:15}}>{n.icon}</span>{n.label}
+        </button>))}
+      </div>
+      <div style={{padding:"14px 20px",borderTop:"1px solid #2e2e30"}}>
+        <div style={{fontSize:10,color:ROLE_COLOR[user.role],textTransform:"uppercase",letterSpacing:2,marginBottom:3}}>{ROLE_LABEL[user.role]}</div>
+        <div style={{fontSize:14,color:"#fff",marginBottom:10}}>{user.fullName}</div>
+        <button onClick={()=>setUser(null)} style={{fontSize:12,color:"#666",background:"none",border:"none",cursor:"pointer",padding:0}}>Sign Out</button>
+      </div>
+    </aside>
+    <main style={{marginLeft:225,flex:1,padding:"28px 32px",maxWidth:1200,minWidth:0}}>
+      {view==="tasks"    &&<TasksView    user={user} clients={clients} visits={visits} completions={completions} selectedDate={selectedDate} setSelectedDate={setSelectedDate} saveCompletions={saveCompletions} signatures={signatures} saveSignatures={saveSignatures}/>}
+      {view==="signoff"  &&<SignOffSheet user={user} clients={clients} visits={visits} completions={completions} selectedDate={selectedDate} setSelectedDate={setSelectedDate} signatures={signatures} saveSignatures={saveSignatures}/>}
+      {view==="reports"  &&<Reports      clients={clients} visits={visits} completions={completions} users={users}/>}
+      {view==="clients"  &&<ClientMgr   clients={clients} saveClients={saveClients}/>}
+      {view==="schedule" &&<ScheduleView clients={clients} visits={visits} saveVisits={saveVisits}/>}
+      {view==="team"     &&<TeamMgr      users={users} saveUsers={saveUsers}/>}
+    </main>
+  </div>);
+}
+
+// ─── Login ────────────────────────────────────────────────────────────────────
+function Login({users,onLogin}){
+  const[sel,setSel]=useState(null);const[pin,setPin]=useState("");const[err,setErr]=useState("");
+  const go=()=>{const f=users.find(u=>u.id===sel&&u.pin===pin);if(f)onLogin(f);else setErr("Incorrect PIN – try again.");};
+  return(<div style={{minHeight:"100vh",background:"#1a1a1c",display:"flex",alignItems:"center",justifyContent:"center"}}>
+    <div style={{background:"#242426",borderRadius:16,padding:48,width:420,color:"#f0ede8"}}>
+      <div style={{textAlign:"center",marginBottom:32}}>
+        <img src="https://www.engagedlivingseniors.com/wp-content/uploads/2024/05/FullLogo_NoBuffer-2.png" alt="Engaged Living" style={{width:220,filter:"brightness(0) invert(1)",display:"block",margin:"0 auto 12px"}}/>
+        <div style={{fontSize:11,letterSpacing:2,color:"#666",textTransform:"uppercase"}}>Caregiver Portal</div>
+      </div>
+      <label style={LS}>Select your role</label>
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+        {users.map(u=>(<button key={u.id} onClick={()=>{setSel(u.id);setErr("");}} style={{padding:"12px 16px",borderRadius:8,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:14,border:sel===u.id?"2px solid #c0392b":"2px solid #333",background:sel===u.id?"#3a1010":"#1a1a1c",color:"#f0ede8"}}>
+          <span>{u.fullName}</span>
+          <span style={{fontSize:10,color:ROLE_COLOR[u.role],textTransform:"uppercase",letterSpacing:1}}>{ROLE_LABEL[u.role]}</span>
+        </button>))}
+      </div>
+      <label style={LS}>PIN</label>
+      <input type="password" value={pin} onChange={e=>{setPin(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&go()} placeholder="Enter PIN" style={{width:"100%",padding:"12px 16px",borderRadius:8,border:"2px solid #333",background:"#1a1a1c",color:"#fff",fontSize:20,letterSpacing:8,marginBottom:16}}/>
+      {err&&<div style={{color:"#c0392b",fontSize:13,marginBottom:12}}>{err}</div>}
+      <button onClick={go} disabled={!sel} style={{width:"100%",padding:14,background:"#c0392b",color:"#fff",border:"none",borderRadius:8,fontSize:15,cursor:"pointer",opacity:sel?1:0.5}}>Sign In</button>
+    </div>
+  </div>);
+}
+
+// ─── Tasks View ───────────────────────────────────────────────────────────────
+function TasksView({user,clients,visits,completions,selectedDate,setSelectedDate,saveCompletions,signatures,saveSignatures}){
+  const[filter,setFilter]=useState("all");
+  const[showSigPad,setShowSigPad]=useState(false);
+  const[localInitials,setLocalInitials]=useState({});
+  const isCG=user.role==="caregiver";
+  const scheduledToday=visits.filter(v=>isScheduledOn(v,selectedDate)).sort((a,b)=>parseTime(a.time)-parseTime(b.time));
+  const doneSet=new Set(completions.filter(c=>c.date===selectedDate).map(c=>c.visitId));
+  const savedInitials=completions.filter(c=>c.date===selectedDate).reduce((acc,c)=>{if(c.initials)acc[c.visitId]=c.initials;return acc;},{});
+  const items=scheduledToday.map(v=>({v,client:clients.find(c=>c.id===v.clientId),done:doneSet.has(v.id)})).filter(x=>x.client);
+  const filtered=filter==="all"?items:filter==="done"?items.filter(i=>i.done):items.filter(i=>!i.done);
+  const doneCnt=items.filter(i=>i.done).length;
+
+  const toggleVisit=(visitId)=>{
+    const exists=completions.find(c=>c.date===selectedDate&&c.visitId===visitId);
+    const inits=localInitials[visitId]??savedInitials[visitId]??"";
+    const updated=exists?completions.filter(c=>!(c.date===selectedDate&&c.visitId===visitId)):[...completions,{id:`${selectedDate}-${visitId}`,date:selectedDate,visitId,completedBy:user.id,completedAt:new Date().toISOString(),initials:inits}];
+    saveCompletions(updated);
+  };
+
+  const handleInitials=(visitId,val)=>{
+    const v=val.toUpperCase().slice(0,3);
+    setLocalInitials(p=>({...p,[visitId]:v}));
+    if(doneSet.has(visitId))saveCompletions(completions.map(c=>(c.date===selectedDate&&c.visitId===visitId)?{...c,initials:v}:c));
+  };
+
+  const sigKey=`cg-daily-${selectedDate}`;
+  const existingSig=signatures[sigKey];
+  const handleSaveSig=(dataUrl)=>{saveSignatures({...signatures,[sigKey]:{sig:dataUrl,signedAt:new Date().toISOString(),signedBy:user.fullName}});setShowSigPad(false);};
+
+  return(<div>
+    <PH title="Daily Tasks" subtitle={fmtDate(selectedDate)}><input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)} style={DI}/></PH>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:24}}>
+      <SC label="Scheduled" value={items.length} color="#2471a3"/>
+      <SC label="Completed" value={doneCnt} color="#1a7a4a"/>
+      <SC label="Rate" value={items.length>0?`${Math.round(doneCnt/items.length*100)}%`:"—"} color={doneCnt===items.length&&items.length>0?"#1a7a4a":"#e67e22"}/>
+    </div>
+    <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+      {[["all",`All (${items.length})`],["pending",`Pending (${items.length-doneCnt})`],["done",`Done (${doneCnt})`]].map(([k,l])=>(
+        <button key={k} onClick={()=>setFilter(k)} style={{padding:"7px 16px",borderRadius:20,border:"2px solid",cursor:"pointer",fontSize:13,borderColor:filter===k?"#1a1a1c":"#ddd",background:filter===k?"#1a1a1c":"#fff",color:filter===k?"#fff":"#333"}}>{l}</button>
+      ))}
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:32}}>
+      {filtered.map(({v,client,done})=>{
+        const inits=localInitials[v.id]??savedInitials[v.id]??"";
+        return(<div key={v.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:12,background:done?"#f0faf4":"#fff",boxShadow:"0 1px 6px rgba(0,0,0,0.06)",borderLeft:v.requiresBoth?"4px solid #c0392b":"4px solid transparent"}}>
+          <button onClick={()=>toggleVisit(v.id)} style={{width:28,height:28,borderRadius:7,border:`2px solid ${done?"#1a7a4a":"#ddd"}`,background:done?"#1a7a4a":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:15,color:"#fff",cursor:"pointer"}}>{done?"✓":""}</button>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontWeight:"bold",fontSize:13,color:done?"#888":"#1a1a1c",textDecoration:done?"line-through":"none"}}>{v.time} · {client.name} <span style={{color:"#999",fontWeight:"normal"}}>Rm {client.room}</span></div>
+            <div style={{fontSize:12,color:done?"#aaa":"#444",marginTop:1}}>{v.task}</div>
+            <div style={{display:"flex",gap:6,marginTop:3,flexWrap:"wrap",alignItems:"center"}}>
+              <span style={{fontSize:10,padding:"1px 7px",borderRadius:8,background:(CG_COLOR[v.caregiver]||"#888")+"22",color:CG_COLOR[v.caregiver]||"#888"}}>{v.caregiver}</span>
+              <span style={{fontSize:10,color:LOC_COLOR[client.location]||"#888"}}>{client.location==="Renaissance on Peachtree"?"ROP":"PIB"} · {v.duration}min</span>
+              {v.requiresBoth&&<span style={{fontSize:10,padding:"1px 7px",borderRadius:8,background:"#fdecea",color:"#c0392b",fontWeight:"bold"}}>⚠ BOTH CAREGIVERS</span>}
+            </div>
+          </div>
+          <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+            <div style={{fontSize:9,color:"#aaa",textTransform:"uppercase",letterSpacing:1}}>Initials</div>
+            <input value={inits} onChange={e=>handleInitials(v.id,e.target.value)} placeholder="—" maxLength={3} style={{width:46,textAlign:"center",padding:"6px 4px",borderRadius:6,border:"2px solid #e0e0e0",fontSize:15,fontWeight:"bold",background:inits?"#fffbf0":"#fff"}}/>
+          </div>
+        </div>);
+      })}
+      {filtered.length===0&&<div style={{textAlign:"center",color:"#aaa",padding:48}}>No tasks in this view.</div>}
+    </div>
+    {isCG&&(<div style={{background:"#fff",borderRadius:14,padding:24,boxShadow:"0 2px 10px rgba(0,0,0,0.07)"}}>
+      <div style={{fontWeight:"bold",fontSize:16,marginBottom:4}}>Daily Caregiver Sign-Off</div>
+      <div style={{fontSize:13,color:"#888",marginBottom:16}}>{fmtDate(selectedDate)} — {doneCnt} of {items.length} visits completed</div>
+      {existingSig?(<div>
+        <img src={existingSig.sig} alt="Signature" style={{height:70,border:"1px solid #e0e0e0",borderRadius:8,display:"block",marginBottom:8}}/>
+        <div style={{fontSize:12,color:"#888"}}>Signed at {new Date(existingSig.signedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</div>
+        <button onClick={()=>setShowSigPad(true)} style={{...GB,marginTop:10,fontSize:12,padding:"7px 14px"}}>Update Signature</button>
+      </div>):(<div>
+        <div style={{fontSize:13,color:"#c0392b",marginBottom:12}}>⚠ Not yet signed for this date</div>
+        <button onClick={()=>setShowSigPad(true)} style={PB}>Sign Daily Sheet</button>
+      </div>)}
+      {showSigPad&&<div style={{marginTop:16}}><SignatureCanvas onSave={handleSaveSig} onCancel={()=>setShowSigPad(false)} existing={existingSig&&existingSig.sig}/></div>}
+    </div>)}
+  </div>);
+}
+
+// ─── Sign-Off Sheet ───────────────────────────────────────────────────────────
+function SignOffSheet({user,clients,visits,completions,selectedDate,setSelectedDate,signatures,saveSignatures}){
+  const[sigTarget,setSigTarget]=useState(null);
+  const canAdmin=user.role==="admin";
+  const canSupervise=user.role==="admin"||user.role==="supervisor";
+  const{ws,we}=getWeekRange(selectedDate);
+  const weekDays=[];let wd=new Date(ws+"T00:00:00");for(let i=0;i<7;i++){weekDays.push(wd.toISOString().split("T")[0]);wd.setDate(wd.getDate()+1);}
+  const daySummary=weekDays.map(date=>{const sched=visits.filter(v=>isScheduledOn(v,date));const done=completions.filter(c=>c.date===date&&sched.find(v=>v.id===c.visitId));return{date,scheduled:sched.length,done:done.length,cgSig:signatures[`cg-daily-${date}`]};});
+  const weekKey=`week-${ws}`;
+  const totalSched=daySummary.reduce((s,d)=>s+d.scheduled,0);
+  const totalDone=daySummary.reduce((s,d)=>s+d.done,0);
+  const pct=totalSched>0?Math.round(totalDone/totalSched*100):0;
+  const handleSaveSig=(role,dataUrl)=>{saveSignatures({...signatures,[`${weekKey}-${role}`]:{sig:dataUrl,signedAt:new Date().toISOString(),signedBy:user.fullName,role}});setSigTarget(null);};
+  return(<div>
+    <PH title="Sign-Off Sheet" subtitle={`Week of ${fmtDate(ws)} – ${fmtDate(we)}`}><input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)} style={DI}/></PH>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:28}}>
+      <SC label="Week Total Visits" value={totalSched} color="#2471a3"/>
+      <SC label="Completed" value={totalDone} color="#1a7a4a"/>
+      <SC label="Weekly Rate" value={`${pct}%`} color={pct>=90?"#1a7a4a":pct>=70?"#e67e22":"#c0392b"}/>
+    </div>
+    <div style={{background:"#fff",borderRadius:14,overflow:"hidden",boxShadow:"0 2px 10px rgba(0,0,0,0.07)",marginBottom:28}}>
+      <div style={{padding:"16px 20px",borderBottom:"1px solid #f0f0f0",fontWeight:"bold",fontSize:15}}>Daily Log & Caregiver Signatures</div>
+      <div style={{overflowX:"auto"}}>
+      <table style={{width:"100%",borderCollapse:"collapse",minWidth:500}}>
+        <thead><tr style={{background:"#f8f8f8"}}>{["Date","Day","Scheduled","Completed","Rate","Caregiver Signature"].map(h=><th key={h} style={TH}>{h}</th>)}</tr></thead>
+        <tbody>{daySummary.map(({date,scheduled,done,cgSig})=>{
+          const dpct=scheduled>0?Math.round(done/scheduled*100):null;
+          const dl=new Date(date+"T00:00:00");
+          return(<tr key={date} style={{borderBottom:"1px solid #f5f5f5",background:date===selectedDate?"#fffbf0":"#fff"}}>
+            <td style={TD}>{dl.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</td>
+            <td style={{...TD,fontWeight:"bold"}}>{dl.toLocaleDateString("en-US",{weekday:"short"})}</td>
+            <td style={TD}>{scheduled}</td>
+            <td style={{...TD,color:done===scheduled&&scheduled>0?"#1a7a4a":"#333"}}>{done}</td>
+            <td style={TD}>{dpct!==null?<PBar pct={dpct}/>:"—"}</td>
+            <td style={TD}>{cgSig?(<div style={{display:"flex",alignItems:"center",gap:8}}><img src={cgSig.sig} alt="sig" style={{height:36,border:"1px solid #e0e0e0",borderRadius:6}}/><span style={{fontSize:11,color:"#888"}}>{new Date(cgSig.signedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span></div>):<span style={{fontSize:12,color:"#c0392b"}}>Not signed</span>}</td>
+          </tr>);
+        })}</tbody>
+      </table>
+      </div>
+    </div>
+    <div style={{background:"#fff",borderRadius:14,padding:24,boxShadow:"0 2px 10px rgba(0,0,0,0.07)"}}>
+      <div style={{fontWeight:"bold",fontSize:15,marginBottom:4}}>Weekly Sign-Off</div>
+      <div style={{fontSize:13,color:"#888",marginBottom:20}}>Week of {fmtDate(ws)} through {fmtDate(we)}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:20}}>
+        {[{role:"supervisor",label:"Supervisor",color:"#2471a3",canSign:canSupervise},{role:"admin",label:"Administrator",color:"#c0392b",canSign:canAdmin},{role:"nurse",label:"Nurse",color:"#8e44ad",canSign:canAdmin}].map(({role,label,color,canSign})=>{
+          const sd=signatures[`${weekKey}-${role}`];
+          return(<div key={role} style={{border:`2px solid ${color}33`,borderRadius:12,padding:18}}>
+            <div style={{fontSize:11,color,textTransform:"uppercase",letterSpacing:2,fontWeight:"bold",marginBottom:12}}>{label}</div>
+            {sd?(<div>
+              <img src={sd.sig} alt="sig" style={{height:68,border:"1px solid #e0e0e0",borderRadius:8,display:"block",marginBottom:8,maxWidth:"100%"}}/>
+              <div style={{fontSize:11,color:"#888"}}>{new Date(sd.signedAt).toLocaleDateString()} {new Date(sd.signedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</div>
+              {canSign&&<button onClick={()=>setSigTarget(role)} style={{...GB,fontSize:11,padding:"6px 12px",marginTop:8}}>Update</button>}
+            </div>):(<div>
+              <div style={{height:68,border:"2px dashed #e0e0e0",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:10}}><span style={{fontSize:12,color:"#bbb"}}>Awaiting signature</span></div>
+              {canSign?<button onClick={()=>setSigTarget(role)} style={{...PB,background:color,fontSize:12,padding:"8px 18px"}}>Sign Now</button>:<span style={{fontSize:12,color:"#bbb"}}>Not yet signed</span>}
+            </div>)}
+            {sigTarget===role&&<div style={{marginTop:12}}><SignatureCanvas onSave={d=>handleSaveSig(role,d)} onCancel={()=>setSigTarget(null)} existing={sd&&sd.sig}/></div>}
+          </div>);
+        })}
+      </div>
+    </div>
+  </div>);
+}
+
+// ─── Reports ──────────────────────────────────────────────────────────────────
+function Reports({clients,visits,completions,users}){
+  const[rt,setRt]=useState("daily");const[rd,setRd]=useState(today());
+  const[rs,setRs]=useState(()=>{const d=new Date();d.setDate(d.getDate()-6);return d.toISOString().split("T")[0];});
+  const[re,setRe]=useState(today());
+  const ac=clients.filter(c=>c.active);
+  const getDays=(s,e)=>{const days=[];let d=new Date(s+"T00:00:00");const end=new Date(e+"T00:00:00");while(d<=end){days.push(d.toISOString().split("T")[0]);d.setDate(d.getDate()+1);}return days;};
+  const days=getDays(rs,re);
+  const gaps=[];days.slice(0,14).forEach(date=>ac.forEach(client=>visits.filter(v=>v.clientId===client.id&&isScheduledOn(v,date)).forEach(v=>{if(!completions.find(c=>c.date===date&&c.visitId===v.id))gaps.push({date,client,visit:v});})));
+  return(<div>
+    <PH title="Reports" subtitle="Completion analytics & gaps"/>
+    <div style={{display:"flex",gap:8,marginBottom:28,flexWrap:"wrap"}}>
+      {[["daily","Daily Summary"],["client","Client History"],["gaps","Missed Visits"]].map(([k,l])=>(
+        <button key={k} onClick={()=>setRt(k)} style={{padding:"8px 18px",borderRadius:20,border:"2px solid",cursor:"pointer",fontSize:13,borderColor:rt===k?"#1a1a1c":"#ddd",background:rt===k?"#1a1a1c":"#fff",color:rt===k?"#fff":"#333"}}>{l}</button>
+      ))}
+    </div>
+    {rt==="daily"&&<>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><span style={{fontSize:13,color:"#888"}}>Date:</span><input type="date" value={rd} onChange={e=>setRd(e.target.value)} style={DI}/></div>
+      <div style={{background:"#fff",borderRadius:14,overflow:"hidden",boxShadow:"0 2px 10px rgba(0,0,0,0.07)",overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:500}}>
+          <thead><tr style={{background:"#f8f8f8"}}>{["Client","Room","Location","Scheduled","Done","Missed","Rate"].map(h=><th key={h} style={TH}>{h}</th>)}</tr></thead>
+          <tbody>{ac.map(client=>{
+            const sched=visits.filter(v=>v.clientId===client.id&&isScheduledOn(v,rd));
+            const done=completions.filter(c=>c.date===rd&&sched.find(v=>v.id===c.visitId));
+            const miss=sched.filter(v=>!completions.find(c=>c.date===rd&&c.visitId===v.id));
+            if(!sched.length)return null;
+            return(<tr key={client.id} style={{borderBottom:"1px solid #f5f5f5"}}>
+              <td style={TD}><strong>{client.name}</strong></td><td style={TD}>{client.room}</td>
+              <td style={TD}><span style={{fontSize:11,color:LOC_COLOR[client.location]}}>{client.location==="Renaissance on Peachtree"?"ROP":"PIB"}</span></td>
+              <td style={TD}>{sched.length}</td><td style={{...TD,color:"#1a7a4a"}}>{done.length}</td>
+              <td style={{...TD,color:miss.length>0?"#c0392b":"#888"}}>{miss.length}</td>
+              <td style={TD}><PBar pct={sched.length>0?Math.round(done.length/sched.length*100):0}/></td>
+            </tr>);
+          })}</tbody>
+        </table>
+      </div>
+    </>}
+    {rt==="client"&&<>
+      <RP rangeStart={rs} rangeEnd={re} setRangeStart={setRs} setRangeEnd={setRe}/>
+      <div style={{background:"#fff",borderRadius:14,overflow:"hidden",boxShadow:"0 2px 10px rgba(0,0,0,0.07)",overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:400}}>
+          <thead><tr style={{background:"#f8f8f8"}}>{["Client","Room","Total Completed","Days Active","Avg/Day"].map(h=><th key={h} style={TH}>{h}</th>)}</tr></thead>
+          <tbody>{ac.map(client=>{const done=completions.filter(c=>c.date>=rs&&c.date<=re&&visits.find(v=>v.id===c.visitId&&v.clientId===client.id));const da=new Set(done.map(c=>c.date)).size;return(<tr key={client.id} style={{borderBottom:"1px solid #f5f5f5"}}><td style={TD}><strong>{client.name}</strong></td><td style={TD}>{client.room}</td><td style={{...TD,color:"#1a7a4a"}}>{done.length}</td><td style={TD}>{da}</td><td style={TD}>{da>0?(done.length/da).toFixed(1):"0"}</td></tr>);})}</tbody>
+        </table>
+      </div>
+    </>}
+    {rt==="gaps"&&<>
+      <RP rangeStart={rs} rangeEnd={re} setRangeStart={setRs} setRangeEnd={setRe}/>
+      <div style={{fontSize:13,color:"#888",marginBottom:12}}>{gaps.length} missed {days.length>14?"(first 14 days shown)":`across ${days.length} days`}</div>
+      <div style={{background:"#fff",borderRadius:14,overflow:"hidden",boxShadow:"0 2px 10px rgba(0,0,0,0.07)",maxHeight:500,overflowY:"auto",overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:500}}>
+          <thead style={{position:"sticky",top:0,background:"#f8f8f8"}}><tr>{["Date","Client","Room","Time","Task","CG"].map(h=><th key={h} style={TH}>{h}</th>)}</tr></thead>
+          <tbody>{gaps.slice(0,200).map((g,i)=>(<tr key={i} style={{borderBottom:"1px solid #f5f5f5"}}><td style={TD}>{fmtDate(g.date)}</td><td style={{...TD,fontWeight:"bold"}}>{g.client.name}</td><td style={TD}>{g.client.room}</td><td style={TD}>{g.visit.time}</td><td style={TD}>{g.visit.task}</td><td style={TD}><span style={{fontSize:11,padding:"2px 7px",borderRadius:8,background:(CG_COLOR[g.visit.caregiver]||"#888")+"22",color:CG_COLOR[g.visit.caregiver]||"#888"}}>{g.visit.caregiver}</span></td></tr>))}</tbody>
+        </table>
+      </div>
+    </>}
+  </div>);
+}
+
+// ─── Client Manager ───────────────────────────────────────────────────────────
+function ClientMgr({clients,saveClients}){
+  const[editing,setEditing]=useState(null);const[form,setForm]=useState({name:"",room:"",location:"Renaissance on Peachtree",notes:"",active:true});const[showForm,setShowForm]=useState(false);
+  const save=()=>{if(!form.name.trim())return;saveClients(editing?clients.map(c=>c.id===editing?{...c,...form}:c):[...clients,{id:`c${Date.now()}`,...form}]);setShowForm(false);};
+  return(<div>
+    <PH title="Clients" subtitle={`${clients.filter(c=>c.active).length} active`}><button onClick={()=>{setEditing(null);setForm({name:"",room:"",location:"Renaissance on Peachtree",notes:"",active:true});setShowForm(true);}} style={PB}>+ Add Client</button></PH>
+    {showForm&&(<div style={{background:"#fff",borderRadius:14,padding:28,marginBottom:24,boxShadow:"0 2px 16px rgba(0,0,0,0.1)"}}>
+      <div style={{fontWeight:"bold",fontSize:16,marginBottom:18}}>{editing?"Edit Client":"New Client"}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+        <FLD label="Name *" value={form.name} onChange={v=>setForm({...form,name:v})} placeholder="Full name"/>
+        <FLD label="Room" value={form.room} onChange={v=>setForm({...form,room:v})} placeholder="Room number"/>
+      </div>
+      <div style={{marginBottom:14}}><label style={LS}>Location</label><select value={form.location} onChange={e=>setForm({...form,location:e.target.value})} style={IS}><option>Renaissance on Peachtree</option><option>The Piedmont at Buckhead</option></select></div>
+      <div style={{marginBottom:14}}><label style={LS}>Care Notes</label><textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} rows={2} style={{...IS,resize:"vertical"}} placeholder="Special instructions…"/></div>
+      <div style={{display:"flex",gap:10}}><button onClick={save} style={PB}>Save</button><button onClick={()=>setShowForm(false)} style={GB}>Cancel</button></div>
+    </div>)}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:16}}>
+      {clients.map(c=>(<div key={c.id} style={{background:"#fff",borderRadius:14,padding:20,boxShadow:"0 2px 10px rgba(0,0,0,0.07)",opacity:c.active?1:0.6}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+          <div><div style={{fontWeight:"bold"}}>{c.name}</div><div style={{fontSize:12,color:"#888"}}>Rm {c.room} · <span style={{color:LOC_COLOR[c.location]}}>{c.location==="Renaissance on Peachtree"?"ROP":"PIB"}</span></div></div>
+          <span style={{fontSize:11,color:c.active?"#1a7a4a":"#aaa"}}>{c.active?"Active":"Inactive"}</span>
+        </div>
+        {c.notes&&<div style={{fontSize:11,color:"#e67e22",background:"#fef9f0",borderRadius:6,padding:"4px 8px",marginBottom:10}}>{c.notes}</div>}
+        <div style={{display:"flex",gap:8,marginTop:10}}>
+          <button onClick={()=>{setEditing(c.id);setForm({name:c.name,room:c.room,location:c.location,notes:c.notes,active:c.active});setShowForm(true);}} style={SB("#f5f5f5","#333")}>Edit</button>
+          <button onClick={()=>saveClients(clients.map(x=>x.id===c.id?{...x,active:!x.active}:x))} style={SB(c.active?"#fef0ee":"#f0faf4",c.active?"#c0392b":"#1a7a4a")}>{c.active?"Deactivate":"Activate"}</button>
+        </div>
+      </div>))}
+    </div>
+  </div>);
+}
+
+// ─── Schedule View ────────────────────────────────────────────────────────────
+function ScheduleView({clients,visits,saveVisits}){
+  const[selClient,setSelClient]=useState(null);const[showForm,setShowForm]=useState(false);const[editing,setEditing]=useState(null);
+  const[form,setForm]=useState({time:"8:00 AM",caregiver:"CG1",days:"Daily",task:"",duration:30,requiresBoth:false});
+  const cv=selClient?visits.filter(v=>v.clientId===selClient):[];
+  const save=()=>{if(!form.task.trim()||!selClient)return;saveVisits(editing?visits.map(v=>v.id===editing?{...v,...form}:v):[...visits,{id:`v${Date.now()}`,clientId:selClient,...form}]);setShowForm(false);};
+  return(<div>
+    <PH title="Visit Schedule" subtitle={`${visits.length} scheduled visits`}/>
+    <div style={{marginBottom:20}}><label style={LS}>Select Client</label>
+      <select value={selClient||""} onChange={e=>setSelClient(e.target.value||null)} style={{...IS,maxWidth:320}}>
+        <option value="">— Choose client —</option>
+        {clients.filter(c=>c.active).map(c=><option key={c.id} value={c.id}>{c.name} (Rm {c.room})</option>)}
+      </select>
+    </div>
+    {selClient&&<>
+      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}><button onClick={()=>{setEditing(null);setForm({time:"8:00 AM",caregiver:"CG1",days:"Daily",task:"",duration:30,requiresBoth:false});setShowForm(true);}} style={PB}>+ Add Visit</button></div>
+      {showForm&&(<div style={{background:"#fff",borderRadius:14,padding:24,marginBottom:20,boxShadow:"0 2px 16px rgba(0,0,0,0.1)"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
+          <FLD label="Time" value={form.time} onChange={v=>setForm({...form,time:v})} placeholder="9:00 AM"/>
+          <div><label style={LS}>Caregiver</label><select value={form.caregiver} onChange={e=>setForm({...form,caregiver:e.target.value,requiresBoth:e.target.value==="BOTH"})} style={IS}><option>CG1</option><option>CG2</option><option>BOTH</option></select></div>
+          <FLD label="Days" value={form.days} onChange={v=>setForm({...form,days:v})} placeholder="Daily"/>
+          <div><label style={LS}>Duration (min)</label><input type="number" value={form.duration} onChange={e=>setForm({...form,duration:parseInt(e.target.value)||15})} style={IS}/></div>
+        </div>
+        <div style={{marginBottom:14}}><FLD label="Task Description *" value={form.task} onChange={v=>setForm({...form,task:v})} placeholder="Describe the care task…"/></div>
+        <div style={{display:"flex",gap:10}}><button onClick={save} style={PB}>Save</button><button onClick={()=>setShowForm(false)} style={GB}>Cancel</button></div>
+      </div>)}
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {cv.sort((a,b)=>parseTime(a.time)-parseTime(b.time)).map(v=>(<div key={v.id} style={{background:"#fff",borderRadius:12,padding:"14px 18px",boxShadow:"0 1px 6px rgba(0,0,0,0.06)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div><span style={{fontWeight:"bold",fontSize:14}}>{v.time}</span><span style={{fontSize:12,color:"#888",marginLeft:10}}>{v.days} · {v.duration}min</span>{v.requiresBoth&&<span style={{fontSize:10,padding:"1px 7px",borderRadius:8,background:"#fdecea",color:"#c0392b",marginLeft:8}}>BOTH CGs</span>}<div style={{fontSize:13,marginTop:3}}>{v.task}</div></div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>{setEditing(v.id);setForm({time:v.time,caregiver:v.caregiver,days:v.days,task:v.task,duration:v.duration,requiresBoth:v.requiresBoth||false});setShowForm(true);}} style={SB("#f5f5f5","#333")}>Edit</button>
+            <button onClick={()=>{if(window.confirm("Remove this visit?"))saveVisits(visits.filter(x=>x.id!==v.id));}} style={SB("#fef0ee","#c0392b")}>Remove</button>
+          </div>
+        </div>))}
+      </div>
+    </>}
+  </div>);
+}
+
+// ─── Team Manager ─────────────────────────────────────────────────────────────
+function TeamMgr({users,saveUsers}){
+  const[showForm,setShowForm]=useState(false);const[editing,setEditing]=useState(null);const[form,setForm]=useState({fullName:"",role:"caregiver",pin:""});
+  const save=()=>{if(!form.fullName.trim()||!form.pin.trim())return;saveUsers(editing?users.map(u=>u.id===editing?{...u,...form}:u):[...users,{id:`u${Date.now()}`,...form}]);setShowForm(false);};
+  return(<div>
+    <PH title="Team" subtitle={`${users.length} members`}><button onClick={()=>{setEditing(null);setForm({fullName:"",role:"caregiver",pin:""});setShowForm(true);}} style={PB}>+ Add Member</button></PH>
+    {showForm&&(<div style={{background:"#fff",borderRadius:14,padding:28,marginBottom:24,boxShadow:"0 2px 16px rgba(0,0,0,0.1)"}}>
+      <div style={{fontWeight:"bold",fontSize:16,marginBottom:18}}>{editing?"Edit Member":"New Member"}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:14}}>
+        <FLD label="Full Name *" value={form.fullName} onChange={v=>setForm({...form,fullName:v})} placeholder="e.g. Jane Smith"/>
+        <div><label style={LS}>Role</label><select value={form.role} onChange={e=>setForm({...form,role:e.target.value})} style={IS}><option value="caregiver">Caregiver</option><option value="supervisor">Supervisor</option><option value="admin">Admin / Nurse</option></select></div>
+        <FLD label="PIN *" value={form.pin} onChange={v=>setForm({...form,pin:v})} placeholder="4-digit PIN"/>
+      </div>
+      <div style={{display:"flex",gap:10}}><button onClick={save} style={PB}>Save</button><button onClick={()=>setShowForm(false)} style={GB}>Cancel</button></div>
+    </div>)}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))",gap:16}}>
+      {users.map(u=>(<div key={u.id} style={{background:"#fff",borderRadius:14,padding:22,boxShadow:"0 2px 10px rgba(0,0,0,0.07)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
+          <div><div style={{fontWeight:"bold",fontSize:16}}>{u.fullName}</div><div style={{fontSize:11,color:ROLE_COLOR[u.role],textTransform:"uppercase",letterSpacing:1,marginTop:3}}>{ROLE_LABEL[u.role]}</div></div>
+          <span style={{fontSize:12,color:"#888"}}>PIN: {u.pin}</span>
+        </div>
+        <div style={{display:"flex",gap:8,marginTop:12}}>
+          <button onClick={()=>{setEditing(u.id);setForm({fullName:u.fullName,role:u.role,pin:u.pin});setShowForm(true);}} style={SB("#f5f5f5","#333")}>Edit</button>
+          <button onClick={()=>{if(window.confirm("Remove?"))saveUsers(users.filter(x=>x.id!==u.id));}} style={SB("#fef0ee","#c0392b")}>Remove</button>
+        </div>
+      </div>))}
+    </div>
+  </div>);
+}
+
+// ─── Shared Components ────────────────────────────────────────────────────────
+function PH({title,subtitle,children}){return(<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:24}}><div><div style={{fontSize:26,fontWeight:"bold",color:"#1a1a1c"}}>{title}</div>{subtitle&&<div style={{fontSize:13,color:"#888",marginTop:3}}>{subtitle}</div>}</div>{children&&<div style={{display:"flex",gap:10,alignItems:"center"}}>{children}</div>}</div>);}
+function SC({label,value,color}){return(<div style={{background:"#fff",borderRadius:14,padding:"20px 24px",boxShadow:"0 2px 10px rgba(0,0,0,0.07)"}}><div style={{fontSize:11,color:"#888",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>{label}</div><div style={{fontSize:30,fontWeight:"bold",color}}>{value}</div></div>);}
+function PBar({pct}){return(<div style={{height:5,background:"#f0f0f0",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:pct===100?"#1a7a4a":pct>=50?"#e67e22":"#c0392b",borderRadius:3}}/></div>);}
+function RP({rangeStart,rangeEnd,setRangeStart,setRangeEnd}){return(<div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,flexWrap:"wrap"}}><span style={{fontSize:13,color:"#888"}}>From:</span><input type="date" value={rangeStart} onChange={e=>setRangeStart(e.target.value)} style={DI}/><span style={{fontSize:13,color:"#888"}}>To:</span><input type="date" value={rangeEnd} onChange={e=>setRangeEnd(e.target.value)} style={DI}/></div>);}
+function FLD({label,value,onChange,placeholder}){return(<div><label style={LS}>{label}</label><input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={IS}/></div>);}
+
+const DI={padding:"8px 13px",borderRadius:8,border:"2px solid #e0e0e0",background:"#fff",fontSize:13};
+const IS={width:"100%",padding:"10px 13px",borderRadius:8,border:"2px solid #e8e8e8",fontSize:14,boxSizing:"border-box"};
+const LS={fontSize:11,color:"#888",display:"block",marginBottom:5,textTransform:"uppercase",letterSpacing:1};
+const PB={padding:"10px 20px",background:"#1a1a1c",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13};
+const GB={padding:"10px 20px",background:"#f0f0f0",color:"#333",border:"none",borderRadius:8,cursor:"pointer",fontSize:13};
+const SB=(bg,color)=>({padding:"7px 14px",borderRadius:8,border:"none",background:bg,color,cursor:"pointer",fontSize:12});
+const TH={padding:"12px 14px",textAlign:"left",fontSize:11,textTransform:"uppercase",letterSpacing:1,color:"#888",borderBottom:"2px solid #f0f0f0"};
+const TD={padding:"12px 14px",fontSize:13,borderBottom:"1px solid #f8f8f8"};
+
+// ─── Mount ────────────────────────────────────────────────────────────────────
+const root=ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App/>);
+</script>
+</body>
+</html>
