@@ -1,0 +1,712 @@
+
+const DEFAULT_CLIENTS=[
+  {id:"c1",  name:"Richard Barkin",   room:"1209",location:"Renaissance on Peachtree",  notes:"Catheter care. Night bag to day bag AM/PM.",active:true},
+  {id:"c2",  name:"Aviva Waitzman",   room:"502", location:"Renaissance on Peachtree",  notes:"Meal deliveries Mon/Wed/Fri. Shower + laundry evening.",active:true},
+  {id:"c3",  name:"Peter Munton",     room:"414", location:"Renaissance on Peachtree",  notes:"Has cat. Feed daily. Safety check + toileting every visit. 4 visits/day.",active:true},
+  {id:"c4",  name:"Nancy Gillam",     room:"815", location:"Renaissance on Peachtree",  notes:"7:30 AM dress+toilet+TV. 8:30 AM BOTH caregivers escort+feed. Meds AM+PM.",active:true},
+  {id:"c5",  name:"William Gillam",   room:"815", location:"Renaissance on Peachtree",  notes:"Same room as Nancy Gillam. 8:30 AM BOTH caregivers morning only.",active:true},
+  {id:"c6",  name:"Richard Lawry",    room:"1203",location:"Renaissance on Peachtree",  notes:"Daily morning routine. Shower Mon/Wed/Fri. Medication reminder every morning.",active:true},
+  {id:"c7",  name:"Bill Cadle",       room:"1504",location:"Renaissance on Peachtree",  notes:"Eye drops daily. BP check every Monday.",active:true},
+  {id:"c8",  name:"Albert Moore",     room:"914", location:"Renaissance on Peachtree",  notes:"4 visits: 7:30 AM dress, 11:30 AM shower, 4:30 PM shower, 8 PM night dress.",active:true},
+  {id:"c9",  name:"Uma Lal",          room:"1502",location:"Renaissance on Peachtree",  notes:"90-min exception visit Wed & Fri only.",active:true},
+  {id:"c10", name:"Bobby Keidan",     room:"705", location:"Renaissance on Peachtree",  notes:"3 visits: 8:15 AM shower, 12:30 PM safety check, 8:30 PM night.",active:true},
+  {id:"c11", name:"Val Jean Wright",  room:"1409",location:"Renaissance on Peachtree",  notes:"Shower Tue & Thu only.",active:true},
+  {id:"c12", name:"Kerry Danoff",     room:"1212",location:"Renaissance on Peachtree",  notes:"All meals brought to room. Toileting with meals.",active:true},
+  {id:"c13", name:"Lucy Shingleton",  room:"1404",location:"Renaissance on Peachtree",  notes:"Sunday evening shower includes shampoo.",active:true},
+  {id:"c14", name:"Michael Solis",    room:"1605",location:"Renaissance on Peachtree",  notes:"Thursday afternoon shower only.",active:true},
+  {id:"c15", name:"Hill Robertson",   room:"712", location:"Renaissance on Peachtree",  notes:"Removed from active schedule.",active:false},
+  {id:"c16", name:"Ruth Hydrick",     room:"206", location:"Renaissance on Peachtree",  notes:"Smoke break escort 10:30 AM and 3:30 PM daily.",active:true},
+  {id:"c17", name:"Mary Overton",     room:"905", location:"Renaissance on Peachtree",  notes:"Morning 8:30 AM, evening 7:15 PM, safety check 9:30 PM.",active:true},
+  {id:"c18", name:"Judith Felentzer", room:"1210",location:"Renaissance on Peachtree",  notes:"Eye drops strict +/- 15 min: 9 AM, 1 PM, 5 PM, 9 PM.",active:true},
+  {id:"c19", name:"Earl Hallal",      room:"1509",location:"The Piedmont at Buckhead",  notes:"STRICT times: 9 AM, 2 PM, 7 PM. Allow 20 min drive from ROP.",active:true},
+  {id:"c20", name:"Nancy Hallal",     room:"1509",location:"The Piedmont at Buckhead",  notes:"STRICT times: 9 AM, 2 PM, 7 PM. Same room as Earl Hallal.",active:true},
+  {id:"c21", name:"Patricia Ahanotu", room:"1009",location:"Renaissance on Peachtree",  notes:"HIGH ACUITY. 7-8 visits/day every 2-3 hrs. Toileting q2h, 3 meals, dressing, turning, shower Mon/Wed/Fri.",active:true},
+];
+
+const DEFAULT_VISITS=[
+  {id:"v1",  clientId:"c1",  time:"8:00 AM",  caregiver:"CG2",days:"Daily",            task:"Dressing, Toileting, Catheter night to day bag",  duration:30,requiresBoth:false},
+  {id:"v3",  clientId:"c1",  time:"8:00 PM",  caregiver:"CG1",days:"Daily",            task:"Dressing, Toileting, Change day to night bag",    duration:30,requiresBoth:false},
+  {id:"v5",  clientId:"c2",  time:"9:00 AM",  caregiver:"CG1",days:"Mon/Wed/Fri",      task:"Morning meal delivery",                           duration:15,requiresBoth:false},
+  {id:"v6",  clientId:"c2",  time:"11:30 AM", caregiver:"CG2",days:"Mon/Wed/Fri",      task:"Midday meal delivery",                            duration:15,requiresBoth:false},
+  {id:"v7",  clientId:"c2",  time:"5:45 PM",  caregiver:"CG2",days:"Mon/Wed/Fri",      task:"Shower assistance, Laundry",                      duration:30,requiresBoth:false},
+  {id:"v8",  clientId:"c3",  time:"10:30 AM", caregiver:"CG2",days:"Daily",            task:"Safety check, Toileting, Feed cat",               duration:15,requiresBoth:false},
+  {id:"v9",  clientId:"c3",  time:"1:00 PM",  caregiver:"CG1",days:"Daily",            task:"Safety check, Toileting, Housekeeping",           duration:15,requiresBoth:false},
+  {id:"v10", clientId:"c3",  time:"4:00 PM",  caregiver:"CG2",days:"Daily",            task:"Safety check, Toileting",                        duration:15,requiresBoth:false},
+  {id:"v11", clientId:"c3",  time:"7:30 PM",  caregiver:"CG1",days:"Daily",            task:"Safety check, Toileting, Housekeeping",           duration:15,requiresBoth:false},
+  {id:"v15", clientId:"c4",  time:"7:30 AM",  caregiver:"CG1",days:"Daily",            task:"Dressing, Toileting, Grooming, Position in front of TV", duration:30,requiresBoth:false},
+  {id:"v15a",clientId:"c4",  time:"8:30 AM",  caregiver:"BOTH",days:"Daily",           task:"BOTH CGs - Escort to breakfast, Feeding assistance, Meds", duration:45,requiresBoth:true},
+  {id:"v15b",clientId:"c4",  time:"11:30 AM", caregiver:"CG2",days:"Daily",            task:"Feeding assistance at lunch, Toileting",          duration:20,requiresBoth:false},
+  {id:"v16", clientId:"c4",  time:"5:00 PM",  caregiver:"CG1",days:"Daily",            task:"Toileting, Check-in, Dinner escort",              duration:15,requiresBoth:false},
+  {id:"v19", clientId:"c4",  time:"9:00 PM",  caregiver:"CG1",days:"Daily",            task:"Toileting, Bed prep, Meds",                       duration:30,requiresBoth:false},
+  {id:"v20", clientId:"c5",  time:"8:30 AM",  caregiver:"BOTH",days:"Daily",           task:"BOTH CGs - Dressing, Toileting, Escort to breakfast", duration:30,requiresBoth:true},
+  {id:"v22", clientId:"c6",  time:"8:30 AM",  caregiver:"CG2",days:"Mon/Wed/Fri",      task:"Morning routine - Shower, Dressing, Grooming, Medication reminder", duration:45,requiresBoth:false},
+  {id:"v22b",clientId:"c6",  time:"8:30 AM",  caregiver:"CG2",days:"Tue/Thu/Sat/Sun", task:"Morning routine - Dressing, Grooming, Medication reminder",        duration:30,requiresBoth:false},
+  {id:"v24", clientId:"c7",  time:"10:00 AM", caregiver:"CG2",days:"Monday",           task:"Medication reminder, Eye drops, BP check",        duration:30,requiresBoth:false},
+  {id:"v25", clientId:"c7",  time:"10:00 AM", caregiver:"CG2",days:"Tue-Sun",          task:"Medication reminder, Eye drops",                  duration:15,requiresBoth:false},
+  {id:"v26", clientId:"c8",  time:"7:30 AM",  caregiver:"CG1",days:"Daily",            task:"Get out of bed, Dressing, Toileting, Escort to breakfast", duration:30,requiresBoth:false},
+  {id:"v27", clientId:"c8",  time:"11:30 AM", caregiver:"CG1",days:"Daily",            task:"Shower assistance, Toileting, Escort to lunch",   duration:30,requiresBoth:false},
+  {id:"v28", clientId:"c8",  time:"4:30 PM",  caregiver:"CG2",days:"Daily",            task:"Shower assistance, Toileting, Escort to dinner",  duration:30,requiresBoth:false},
+  {id:"v29", clientId:"c8",  time:"8:00 PM",  caregiver:"CG2",days:"Daily",            task:"Nighttime dressing, Toileting, Prepare for bed",  duration:30,requiresBoth:false},
+  {id:"v30", clientId:"c9",  time:"10:30 AM", caregiver:"CG1",days:"Wed/Fri",          task:"Laundry, Shower, Housekeeping (90 min)",          duration:90,requiresBoth:false},
+  {id:"v31", clientId:"c10", time:"8:15 AM",  caregiver:"CG1",days:"Daily",            task:"Dressing, Shower, Escort to breakfast, ADLs",    duration:30,requiresBoth:false},
+  {id:"v32", clientId:"c10", time:"12:30 PM", caregiver:"CG2",days:"Daily",            task:"Safety check, Toileting",                        duration:15,requiresBoth:false},
+  {id:"v33", clientId:"c10", time:"8:30 PM",  caregiver:"CG2",days:"Daily",            task:"Dressing, Nighttime ADLs, Prepare for bed",      duration:30,requiresBoth:false},
+  {id:"v34", clientId:"c11", time:"10:45 AM", caregiver:"CG1",days:"Tue/Thu",          task:"Shower assistance",                              duration:30,requiresBoth:false},
+  {id:"v35", clientId:"c12", time:"7:30 AM",  caregiver:"CG1",days:"Daily",            task:"Help get going, Morning ADLs, Bring breakfast",  duration:30,requiresBoth:false},
+  {id:"v36", clientId:"c12", time:"12:00 PM", caregiver:"CG2",days:"Daily",            task:"Bring lunch, Toileting",                         duration:15,requiresBoth:false},
+  {id:"v37", clientId:"c12", time:"5:30 PM",  caregiver:"CG1",days:"Daily",            task:"Bring dinner, Toileting",                        duration:15,requiresBoth:false},
+  {id:"v38", clientId:"c12", time:"8:30 PM",  caregiver:"CG1",days:"Mon-Fri",          task:"Nighttime assist, Prepare for bed",              duration:30,requiresBoth:false},
+  {id:"v39", clientId:"c12", time:"8:30 PM",  caregiver:"CG2",days:"Sat-Sun",          task:"Nighttime assist, Prepare for bed",              duration:30,requiresBoth:false},
+  {id:"v40", clientId:"c13", time:"8:30 AM",  caregiver:"CG2",days:"Mon-Fri",          task:"Medication reminder, Escort to breakfast",       duration:15,requiresBoth:false},
+  {id:"v41", clientId:"c13", time:"9:00 AM",  caregiver:"CG1",days:"Saturday",         task:"Medication reminder, Escort to breakfast",       duration:15,requiresBoth:false},
+  {id:"v42", clientId:"c13", time:"8:30 AM",  caregiver:"CG2",days:"Sunday",           task:"Medication reminder, Escort to breakfast",       duration:15,requiresBoth:false},
+  {id:"v43", clientId:"c13", time:"7:30 PM",  caregiver:"CG1",days:"Sunday",           task:"Shower, Shampoo",                                duration:30,requiresBoth:false},
+  {id:"v44", clientId:"c14", time:"2:00 PM",  caregiver:"CG1",days:"Thursday",         task:"Shower assistance, Grooming, ADLs",              duration:30,requiresBoth:false},
+  {id:"v51", clientId:"c16", time:"10:30 AM", caregiver:"CG1",days:"Mon/Tue/Thu/Sat/Sun",task:"Escort outside for smoke break",               duration:15,requiresBoth:false},
+  {id:"v52", clientId:"c16", time:"10:30 AM", caregiver:"CG2",days:"Wed/Fri",          task:"Escort outside for smoke break",                 duration:15,requiresBoth:false},
+  {id:"v53", clientId:"c16", time:"3:30 PM",  caregiver:"CG1",days:"Daily",            task:"Escort outside for smoke break",                 duration:15,requiresBoth:false},
+  {id:"v54", clientId:"c17", time:"8:30 AM",  caregiver:"CG2",days:"Daily",            task:"Morning routine - Toileting, Dressing, Help get going", duration:30,requiresBoth:false},
+  {id:"v55", clientId:"c17", time:"7:15 PM",  caregiver:"CG2",days:"Daily",            task:"Prepare for bed, Evening routine",               duration:30,requiresBoth:false},
+  {id:"v56", clientId:"c17", time:"9:30 PM",  caregiver:"CG1",days:"Daily",            task:"Safety check before end of shift",               duration:15,requiresBoth:false},
+  {id:"v57", clientId:"c18", time:"9:00 AM",  caregiver:"CG1",days:"Daily",            task:"Eye drop assistance - STRICT +/- 15 min",        duration:15,requiresBoth:false},
+  {id:"v58", clientId:"c18", time:"1:00 PM",  caregiver:"CG1",days:"Daily",            task:"Eye drop assistance - STRICT +/- 15 min",        duration:15,requiresBoth:false},
+  {id:"v59", clientId:"c18", time:"5:00 PM",  caregiver:"CG2",days:"Daily",            task:"Eye drop assistance - STRICT +/- 15 min",        duration:15,requiresBoth:false},
+  {id:"v60", clientId:"c18", time:"9:00 PM",  caregiver:"CG2",days:"Daily",            task:"Eye drop assistance - STRICT +/- 15 min",        duration:15,requiresBoth:false},
+  {id:"v62", clientId:"c19", time:"9:00 AM",  caregiver:"CG1",days:"Daily",            task:"DRIVE TO PIB - Dressing, Toileting, ADLs (Earl + Nancy)", duration:30,requiresBoth:false},
+  {id:"v63", clientId:"c19", time:"2:00 PM",  caregiver:"CG2",days:"Daily",            task:"DRIVE TO PIB - Toileting, Check-in (Earl + Nancy)",      duration:15,requiresBoth:false},
+  {id:"v64", clientId:"c19", time:"7:00 PM",  caregiver:"CG1",days:"Daily",            task:"DRIVE TO PIB - Dressing, Prepare for bed (Earl + Nancy)", duration:30,requiresBoth:false},
+  {id:"v65", clientId:"c20", time:"9:00 AM",  caregiver:"CG1",days:"Daily",            task:"DRIVE TO PIB - Dressing, Toileting, ADLs (Earl + Nancy)", duration:30,requiresBoth:false},
+  {id:"v66", clientId:"c20", time:"2:00 PM",  caregiver:"CG2",days:"Daily",            task:"DRIVE TO PIB - Toileting, Check-in (Earl + Nancy)",      duration:15,requiresBoth:false},
+  {id:"v67", clientId:"c20", time:"7:00 PM",  caregiver:"CG1",days:"Daily",            task:"DRIVE TO PIB - Dressing, Prepare for bed (Earl + Nancy)", duration:30,requiresBoth:false},
+  {id:"p1",  clientId:"c21", time:"7:00 AM",  caregiver:"CG1",days:"Daily",            task:"Morning dressing, Toileting, Oral care, Grooming, Escort to breakfast", duration:30,requiresBoth:false},
+  {id:"p2",  clientId:"c21", time:"9:00 AM",  caregiver:"CG2",days:"Daily",            task:"Toileting, Repositioning/Turning, Skin check",    duration:20,requiresBoth:false},
+  {id:"p3",  clientId:"c21", time:"11:30 AM", caregiver:"CG1",days:"Daily",            task:"Escort to lunch, Feeding assistance, Toileting",  duration:30,requiresBoth:false},
+  {id:"p4",  clientId:"c21", time:"1:30 PM",  caregiver:"CG2",days:"Daily",            task:"Toileting, Repositioning/Turning, Range of motion", duration:20,requiresBoth:false},
+  {id:"p5",  clientId:"c21", time:"3:00 PM",  caregiver:"CG1",days:"Mon/Wed/Fri",      task:"Shower, Hair care, Skin care, Toileting",         duration:45,requiresBoth:false},
+  {id:"p5b", clientId:"c21", time:"3:00 PM",  caregiver:"CG1",days:"Tue/Thu/Sat/Sun", task:"Sponge bath, Skin care, Toileting, Repositioning", duration:30,requiresBoth:false},
+  {id:"p6",  clientId:"c21", time:"5:30 PM",  caregiver:"CG2",days:"Daily",            task:"Escort to dinner, Feeding assistance, Toileting", duration:30,requiresBoth:false},
+  {id:"p7",  clientId:"c21", time:"7:30 PM",  caregiver:"CG1",days:"Daily",            task:"Toileting, Repositioning/Turning, Comfort check", duration:20,requiresBoth:false},
+  {id:"p8",  clientId:"c21", time:"9:30 PM",  caregiver:"CG2",days:"Daily",            task:"Nighttime dressing, Toileting, Oral care, Prepare for bed, Final turn", duration:30,requiresBoth:false},
+];
+
+const DEFAULT_USERS=[
+  {id:"u1",fullName:"Caregivers",   role:"caregiver",  pin:"3755"},
+  {id:"u3",fullName:"Supervisor",   role:"supervisor", pin:"3579"},
+  {id:"u4",fullName:"Admin / Nurse",role:"admin",      pin:"3355"},
+];
+
+const CLIENT_START_DATES={c1:"2023-12-01",c2:"2024-01-25",c3:"2024-12-01",c4:"2025-10-07",c5:"2026-02-01",c6:"2025-11-03",c7:"2025-11-11",c8:"2025-10-30",c9:"2024-12-11",c10:"2025-07-02",c11:"2025-05-22",c12:"2025-03-06",c13:"2023-12-01",c14:"2026-02-05",c16:"2026-02-01",c17:"2026-01-10",c18:"2025-09-01",c19:"2026-02-21",c20:"2026-02-21",c21:"2026-03-01"};
+const SEED_THROUGH="2026-03-03";
+function _dow(ds){return["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(ds+"T12:00:00Z").getUTCDay()];}
+function _sched(days,ds){const dw=_dow(ds);if(days==="Daily")return true;if(days==="Monday")return dw==="Mon";if(days==="Thursday")return dw==="Thu";if(days==="Saturday")return dw==="Sat";if(days==="Sunday")return dw==="Sun";if(days==="Mon-Fri")return["Mon","Tue","Wed","Thu","Fri"].includes(dw);if(days==="Sat-Sun")return["Sat","Sun"].includes(dw);if(days==="Tue-Sun")return["Tue","Wed","Thu","Fri","Sat","Sun"].includes(dw);if(days==="Mon-Sat")return["Mon","Tue","Wed","Thu","Fri","Sat"].includes(dw);if(days==="Tue-Sun")return["Tue","Wed","Thu","Fri","Sat","Sun"].includes(dw);return days.split("/").map(p=>p.trim()).some(p=>dw.startsWith(p.slice(0,3)));}
+function _addDay(ds){const d=new Date(ds+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+1);return d.toISOString().split("T")[0];}
+function generateHistoricalCompletions(visits){const out=[];for(const[cid,start]of Object.entries(CLIENT_START_DATES)){const cv=visits.filter(v=>v.clientId===cid);let d=start;while(d<=SEED_THROUGH){for(const v of cv)if(_sched(v.days,d))out.push({id:`${d}-${v.id}`,date:d,visitId:v.id,completedBy:"u1",completedAt:`${d}T12:00:00.000Z`,initials:""});d=_addDay(d);}}return out;}
+
+const today=()=>new Date().toISOString().split("T")[0];
+const fmtDate=d=>new Date(d+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"});
+const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const ROLE_COLOR={admin:"#c0392b",supervisor:"#2471a3",caregiver:"#1a7a4a"};
+const ROLE_LABEL={admin:"Admin / Nurse",supervisor:"Supervisor",caregiver:"Caregivers"};
+const LOC_COLOR={"Renaissance on Peachtree":"#2471a3","The Piedmont at Buckhead":"#8e44ad"};
+const CG_COLOR={CG1:"#1a7a4a",CG2:"#e67e22",BOTH:"#c0392b"};
+function isScheduledOn(visit,dateStr){const dow=DOW[new Date(dateStr+"T00:00:00").getDay()];const days=visit.days;if(days==="Daily")return true;if(days==="Monday")return dow==="Mon";if(days==="Thursday")return dow==="Thu";if(days==="Saturday")return dow==="Sat";if(days==="Sunday")return dow==="Sun";if(days==="Mon-Fri")return["Mon","Tue","Wed","Thu","Fri"].includes(dow);if(days==="Tue-Fri")return["Tue","Wed","Thu","Fri"].includes(dow);if(days==="Tue-Sun")return["Tue","Wed","Thu","Fri","Sat","Sun"].includes(dow);if(days==="Sat-Sun")return["Sat","Sun"].includes(dow);if(days==="Mon-Sat")return["Mon","Tue","Wed","Thu","Fri","Sat"].includes(dow);return days.split("/").some(p=>dow.startsWith(p.trim().slice(0,3)));}
+function parseTime(t){const[tp,ap]=t.split(" ");let[h,m]=tp.split(":").map(Number);if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;return h*60+m;}
+function getWeekRange(dateStr){const d=new Date(dateStr+"T00:00:00");const ws=new Date(d);ws.setDate(d.getDate()-d.getDay());const we=new Date(ws);we.setDate(ws.getDate()+6);return{ws:ws.toISOString().split("T")[0],we:we.toISOString().split("T")[0]};}
+function fmtTime12(h,m){const ap=h>=12?"PM":"AM";const hh=h%12||12;return`${hh}:${String(m).padStart(2,"0")} ${ap}`;}
+function suggestTime(existingVisits,desiredMins){const occ=new Set(existingVisits.map(v=>parseTime(v.time)));for(let d=0;d<=120;d+=15){for(const s of[1,-1]){const t=desiredMins+s*d;if(t>=0&&t<1440&&!occ.has(t)){return fmtTime12(Math.floor(t/60),t%60);}}}return null;}
+
+function SignatureCanvas({onSave,onCancel,existing}){
+  const canvasRef=useRef(null);
+  const[drawing,setDrawing]=useState(false);
+  const[hasStrokes,setHasStrokes]=useState(false);
+  useEffect(()=>{const cv=canvasRef.current,ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.strokeStyle="#1a1a1c";ctx.lineWidth=2.5;ctx.lineCap="round";ctx.lineJoin="round";if(existing){const img=new Image();img.onload=()=>ctx.drawImage(img,0,0);img.src=existing;setHasStrokes(true);}},[]);
+  const getPos=(e,cv)=>{const r=cv.getBoundingClientRect(),sx=cv.width/r.width,sy=cv.height/r.height,cx=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY;return{x:(cx-r.left)*sx,y:(cy-r.top)*sy};};
+  const start=e=>{e.preventDefault();const cv=canvasRef.current,ctx=cv.getContext("2d"),p=getPos(e,cv);ctx.beginPath();ctx.moveTo(p.x,p.y);setDrawing(true);setHasStrokes(true);};
+  const move=e=>{e.preventDefault();if(!drawing)return;const cv=canvasRef.current,ctx=cv.getContext("2d"),p=getPos(e,cv);ctx.lineTo(p.x,p.y);ctx.stroke();};
+  const end=e=>{e.preventDefault();setDrawing(false);};
+  const clear=()=>{const cv=canvasRef.current,ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);setHasStrokes(false);};
+  return(<div style={{background:"#fff",borderRadius:12,padding:18,boxShadow:"0 4px 20px rgba(0,0,0,0.12)"}}>
+    <div style={{fontSize:12,color:"#888",marginBottom:8}}>Draw your signature below</div>
+    <canvas ref={canvasRef} width={420} height={130} style={{border:"2px solid #e0e0e0",borderRadius:8,cursor:"crosshair",width:"100%",touchAction:"none",display:"block"}}
+      onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end} onTouchStart={start} onTouchMove={move} onTouchEnd={end}/>
+    <div style={{display:"flex",gap:8,marginTop:10}}>
+      <button onClick={()=>hasStrokes&&onSave(canvasRef.current.toDataURL())} style={{...PB,opacity:hasStrokes?1:0.4}}>Save</button>
+      <button onClick={clear} style={GB}>Clear</button>
+      <button onClick={onCancel} style={GB}>Cancel</button>
+    </div>
+  </div>);
+}
+
+function App(){
+  const[user,setUser]=useState(null);
+  const[clients,setClients]=useState([]);
+  const[visits,setVisits]=useState([]);
+  const[completions,setCompletions]=useState([]);
+  const[users,setUsers]=useState([]);
+  const[signatures,setSignatures]=useState({});
+  const[careNotes,setCareNotes]=useState([]);
+  const[loaded,setLoaded]=useState(false);
+  const[view,setView]=useState("tasks");
+  const[selectedDate,setSelectedDate]=useState(today());
+
+  useEffect(()=>{
+    const c=dbGet(SK.CLIENTS)||DEFAULT_CLIENTS;
+    const v=dbGet(SK.VISITS)||DEFAULT_VISITS;
+    const u=dbGet(SK.USERS)||DEFAULT_USERS;
+    const s=dbGet(SK.SIGNATURES)||{};
+    const n=dbGet(SK.CARE_NOTES)||[];
+    setClients(c);setVisits(v);setUsers(u);setSignatures(s);setCareNotes(n);
+    let co=dbGet(SK.COMPLETIONS);
+    if(co===null){co=generateHistoricalCompletions(v);dbSet(SK.COMPLETIONS,co);}
+    setCompletions(co);setLoaded(true);
+  },[]);
+
+  const saveClients=useCallback(d=>{setClients(d);dbSet(SK.CLIENTS,d);},[]);
+  const saveVisits=useCallback(d=>{setVisits(d);dbSet(SK.VISITS,d);},[]);
+  const saveCompletions=useCallback(d=>{setCompletions(d);dbSet(SK.COMPLETIONS,d);},[]);
+  const saveUsers=useCallback(d=>{setUsers(d);dbSet(SK.USERS,d);},[]);
+  const saveSignatures=useCallback(d=>{setSignatures(d);dbSet(SK.SIGNATURES,d);},[]);
+  const saveCareNotes=useCallback(d=>{setCareNotes(d);dbSet(SK.CARE_NOTES,d);},[]);
+
+  if(!loaded)return<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#1a1a1c",color:"#f0ede8",fontSize:18}}>Loading…</div>;
+  if(!user)return<Login users={users} onLogin={u=>{setUser(u);setView("tasks");}}/>;
+
+  const canAdmin=user.role==="admin";
+  const canSupervise=user.role==="admin"||user.role==="supervisor";
+  const navItems=[
+    {key:"tasks",        label:"Daily Tasks",    icon:"✓"},
+    {key:"clients_list", label:"Client List",    icon:"◆"},
+    {key:"signoff",      label:"Sign-Off Sheet", icon:"✍"},
+    ...(canSupervise?[{key:"reports",label:"Reports",icon:"▤"},{key:"notes_report",label:"Care Notes",icon:"N"}]:[]),
+    ...(canAdmin?[{key:"clients",label:"Manage Clients",icon:"♥"},{key:"schedule",label:"Schedule",icon:"⏰"},{key:"team",label:"Team",icon:"*"}]:[]),
+  ];
+  const props={user,clients,visits,completions,selectedDate,setSelectedDate,saveCompletions,signatures,saveSignatures,careNotes,saveCareNotes,saveClients,saveVisits,users,saveUsers};
+
+  return(<div style={{minHeight:"100vh",background:"#f0ede8",display:"flex"}}>
+    <aside style={{width:218,background:"#1a1a1c",color:"#f0ede8",display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,height:"100vh",zIndex:100,overflowY:"auto"}}>
+      <div style={{padding:"18px 18px 14px",borderBottom:"1px solid #2e2e30"}}>
+        <img src="https://www.engagedlivingseniors.com/wp-content/uploads/2024/05/FullLogo_NoBuffer-2.png" alt="Engaged Living" style={{width:"100%",maxWidth:176,filter:"brightness(0) invert(1)",display:"block"}}/>
+        <div style={{fontSize:10,letterSpacing:2,color:"#555",textTransform:"uppercase",marginTop:8}}>Caregiver Portal</div>
+      </div>
+      <div style={{padding:"6px 0",flex:1}}>
+        {navItems.map(n=>(<button key={n.key} onClick={()=>setView(n.key)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 18px",background:view===n.key?"#2a2a2c":"transparent",color:view===n.key?"#fff":"#888",border:"none",cursor:"pointer",fontSize:13,textAlign:"left",borderLeft:view===n.key?"3px solid #c0392b":"3px solid transparent"}}>
+          <span style={{fontSize:12}}>{n.icon}</span>{n.label}
+        </button>))}
+      </div>
+      <div style={{padding:"12px 18px",borderTop:"1px solid #2e2e30"}}>
+        <div style={{fontSize:10,color:ROLE_COLOR[user.role],textTransform:"uppercase",letterSpacing:2,marginBottom:3}}>{ROLE_LABEL[user.role]}</div>
+        <div style={{fontSize:13,color:"#fff",marginBottom:8}}>{user.fullName}</div>
+        <button onClick={()=>setUser(null)} style={{fontSize:11,color:"#555",background:"none",border:"none",cursor:"pointer",padding:0}}>Sign Out</button>
+      </div>
+    </aside>
+    <main style={{marginLeft:218,flex:1,padding:"24px 28px",maxWidth:1200,minWidth:0}}>
+      {view==="tasks"        &&<TasksView       {...props}/>}
+      {view==="clients_list" &&<ClientList      {...props}/>}
+      {view==="signoff"      &&<SignOffSheet     {...props}/>}
+      {view==="reports"      &&<Reports         {...props}/>}
+      {view==="notes_report" &&<CareNotesReport {...props}/>}
+      {view==="clients"      &&<ClientMgr       {...props}/>}
+      {view==="schedule"     &&<ScheduleView    {...props}/>}
+      {view==="team"         &&<TeamMgr         {...props}/>}
+    </main>
+  </div>);
+}
+
+function Login({users,onLogin}){
+  const[sel,setSel]=useState(null);const[pin,setPin]=useState("");const[err,setErr]=useState("");
+  const go=()=>{const f=users.find(u=>u.id===sel&&u.pin===pin);if(f)onLogin(f);else setErr("Incorrect PIN.");};
+  return(<div style={{minHeight:"100vh",background:"#1a1a1c",display:"flex",alignItems:"center",justifyContent:"center"}}>
+    <div style={{background:"#242426",borderRadius:16,padding:44,width:420,color:"#f0ede8"}}>
+      <div style={{textAlign:"center",marginBottom:28}}>
+        <img src="https://www.engagedlivingseniors.com/wp-content/uploads/2024/05/FullLogo_NoBuffer-2.png" alt="Engaged Living" style={{width:210,filter:"brightness(0) invert(1)",display:"block",margin:"0 auto 10px"}}/>
+        <div style={{fontSize:11,letterSpacing:2,color:"#666",textTransform:"uppercase"}}>Caregiver Portal</div>
+      </div>
+      <label style={LS}>Select your role</label>
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:18}}>
+        {users.map(u=>(<button key={u.id} onClick={()=>{setSel(u.id);setErr("");}} style={{padding:"11px 14px",borderRadius:8,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13,border:sel===u.id?"2px solid #c0392b":"2px solid #333",background:sel===u.id?"#3a1010":"#1a1a1c",color:"#f0ede8"}}>
+          <span>{u.fullName}</span><span style={{fontSize:10,color:ROLE_COLOR[u.role],textTransform:"uppercase",letterSpacing:1}}>{ROLE_LABEL[u.role]}</span>
+        </button>))}
+      </div>
+      <label style={LS}>PIN</label>
+      <input type="password" value={pin} onChange={e=>{setPin(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&go()} placeholder="Enter PIN" style={{width:"100%",padding:"12px 14px",borderRadius:8,border:"2px solid #333",background:"#1a1a1c",color:"#fff",fontSize:20,letterSpacing:8,marginBottom:14}}/>
+      {err&&<div style={{color:"#c0392b",fontSize:13,marginBottom:10}}>{err}</div>}
+      <button onClick={go} disabled={!sel} style={{width:"100%",padding:13,background:"#c0392b",color:"#fff",border:"none",borderRadius:8,fontSize:14,cursor:"pointer",opacity:sel?1:0.5}}>Sign In</button>
+    </div>
+  </div>);
+}
+
+function ClientList({clients,visits,careNotes,saveCareNotes,user}){
+  const[noteClient,setNoteClient]=useState(null);
+  const[noteText,setNoteText]=useState("");
+  const locs=["Renaissance on Peachtree","The Piedmont at Buckhead"];
+  const addNote=()=>{
+    if(!noteText.trim())return;
+    saveCareNotes([...careNotes,{id:`n${Date.now()}`,clientId:noteClient,text:noteText.trim(),addedBy:user.fullName,addedAt:new Date().toISOString(),role:user.role}]);
+    setNoteText("");setNoteClient(null);
+  };
+  return(<div>
+    <PH title="Client List" subtitle="By community"/>
+    {locs.map(loc=>{
+      const lc=clients.filter(c=>c.active&&c.location===loc);
+      return(<div key={loc} style={{marginBottom:28}}>
+        <div style={{fontWeight:"bold",fontSize:15,color:LOC_COLOR[loc],marginBottom:10,paddingBottom:6,borderBottom:`2px solid ${LOC_COLOR[loc]}33`}}>{loc} <span style={{fontSize:12,fontWeight:"normal",color:"#888"}}>({lc.length} clients)</span></div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:10}}>
+          {lc.map(c=>{
+            const cv=visits.filter(v=>v.clientId===c.id);
+            const cn=careNotes.filter(n=>n.clientId===c.id);
+            return(<div key={c.id} style={{background:"#fff",borderRadius:10,padding:14,boxShadow:"0 1px 5px rgba(0,0,0,0.07)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                <div><div style={{fontWeight:"bold",fontSize:13}}>{c.name}</div><div style={{fontSize:11,color:"#888"}}>Room {c.room}</div></div>
+                <span style={{fontSize:10,color:"#aaa"}}>{cv.length} visits</span>
+              </div>
+              {c.notes&&<div style={{fontSize:11,color:"#e67e22",background:"#fef9f0",borderRadius:5,padding:"3px 7px",marginBottom:7}}>{c.notes}</div>}
+              {cn.slice(-2).map(n=><div key={n.id} style={{fontSize:11,color:"#555",background:"#f5f5f5",borderRadius:5,padding:"3px 7px",marginBottom:3}}>
+                <span style={{color:"#aaa"}}>{new Date(n.addedAt).toLocaleDateString()}:</span> {n.text}
+              </div>)}
+              {cn.length>2&&<div style={{fontSize:10,color:"#aaa",marginBottom:4}}>+{cn.length-2} more</div>}
+              <button onClick={()=>{setNoteClient(c.id);setNoteText("");}} style={{...SB("#f0f4ff","#2471a3"),fontSize:11,padding:"4px 9px",marginTop:4}}>+ Care Note</button>
+            </div>);
+          })}
+        </div>
+      </div>);
+    })}
+    {noteClient&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}}>
+      <div style={{background:"#fff",borderRadius:14,padding:26,width:420,maxWidth:"90vw"}}>
+        <div style={{fontWeight:"bold",fontSize:15,marginBottom:4}}>Add Care Note</div>
+        <div style={{fontSize:12,color:"#888",marginBottom:12}}>{clients.find(c=>c.id===noteClient)?.name}</div>
+        <textarea value={noteText} onChange={e=>setNoteText(e.target.value)} rows={4} placeholder="Enter care note…" style={{...IS,resize:"vertical",marginBottom:12}}/>
+        <div style={{display:"flex",gap:8}}><button onClick={addNote} style={PB}>Save Note</button><button onClick={()=>setNoteClient(null)} style={GB}>Cancel</button></div>
+      </div>
+    </div>)}
+  </div>);
+}
+
+function TasksView({user,clients,visits,completions,selectedDate,setSelectedDate,saveCompletions,signatures,saveSignatures,careNotes,saveCareNotes}){
+  const[filter,setFilter]=useState("all");
+  const[showSigPad,setShowSigPad]=useState(false);
+  const[localInitials,setLocalInitials]=useState({});
+  const[overdueIds,setOverdueIds]=useState(new Set());
+  const[noteVisitId,setNoteVisitId]=useState(null);
+  const[noteText,setNoteText]=useState("");
+  const isCG=user.role==="caregiver";
+  const isToday=selectedDate===today();
+
+  useEffect(()=>{
+    if(!isToday)return;
+    const check=()=>{
+      const now=new Date();const nowMins=now.getHours()*60+now.getMinutes();
+      const doneSet=new Set(completions.filter(c=>c.date===selectedDate).map(c=>c.visitId));
+      const sched=visits.filter(v=>isScheduledOn(v,selectedDate));
+      setOverdueIds(new Set(sched.filter(v=>parseTime(v.time)+v.duration<nowMins&&!doneSet.has(v.id)).map(v=>v.id)));
+    };
+    check();const iv=setInterval(check,60000);return()=>clearInterval(iv);
+  },[completions,visits,selectedDate,isToday]);
+
+  const scheduledToday=visits.filter(v=>isScheduledOn(v,selectedDate)).sort((a,b)=>parseTime(a.time)-parseTime(b.time));
+  const doneSet=new Set(completions.filter(c=>c.date===selectedDate).map(c=>c.visitId));
+  const savedInitials=completions.filter(c=>c.date===selectedDate).reduce((acc,c)=>{if(c.initials)acc[c.visitId]=c.initials;return acc;},{});
+  const items=scheduledToday.map(v=>({v,client:clients.find(c=>c.id===v.clientId),done:doneSet.has(v.id)})).filter(x=>x.client&&x.client.active);
+  const filtered=filter==="all"?items:filter==="done"?items.filter(i=>i.done):filter==="overdue"?items.filter(i=>!i.done&&overdueIds.has(i.v.id)):items.filter(i=>!i.done);
+  const doneCnt=items.filter(i=>i.done).length;
+  const overdueCnt=items.filter(i=>!i.done&&overdueIds.has(i.v.id)).length;
+
+  const toggleVisit=visitId=>{
+    const exists=completions.find(c=>c.date===selectedDate&&c.visitId===visitId);
+    const inits=localInitials[visitId]??savedInitials[visitId]??"";
+    saveCompletions(exists?completions.filter(c=>!(c.date===selectedDate&&c.visitId===visitId)):[...completions,{id:`${selectedDate}-${visitId}`,date:selectedDate,visitId,completedBy:user.id,completedAt:new Date().toISOString(),initials:inits}]);
+  };
+  const handleInitials=(visitId,val)=>{
+    const v=val.toUpperCase().slice(0,3);
+    setLocalInitials(p=>({...p,[visitId]:v}));
+    if(doneSet.has(visitId))saveCompletions(completions.map(c=>(c.date===selectedDate&&c.visitId===visitId)?{...c,initials:v}:c));
+  };
+  const saveNote=()=>{
+    if(!noteText.trim()||!noteVisitId)return;
+    const v=visits.find(x=>x.id===noteVisitId);
+    saveCareNotes([...careNotes,{id:`n${Date.now()}`,clientId:v?.clientId,visitId:noteVisitId,text:noteText.trim(),addedBy:user.fullName,addedAt:new Date().toISOString(),role:user.role,date:selectedDate}]);
+    setNoteText("");setNoteVisitId(null);
+  };
+  const sigKey=`cg-daily-${selectedDate}`;
+  const existingSig=signatures[sigKey];
+  const handleSaveSig=dataUrl=>{saveSignatures({...signatures,[sigKey]:{sig:dataUrl,signedAt:new Date().toISOString(),signedBy:user.fullName}});setShowSigPad(false);};
+
+  return(<div>
+    <PH title="Daily Tasks" subtitle={fmtDate(selectedDate)}><input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)} style={DI}/></PH>
+    {isToday&&overdueCnt>0&&<div className="overdue-pulse" style={{background:"#fdecea",border:"2px solid #c0392b",borderRadius:8,padding:"9px 14px",marginBottom:14,fontSize:13,color:"#c0392b",fontWeight:"bold"}}>WARNING: {overdueCnt} visit{overdueCnt>1?"s":""} overdue and not checked off!</div>}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:18}}>
+      <SC label="Scheduled" value={items.length} color="#2471a3"/>
+      <SC label="Completed" value={doneCnt} color="#1a7a4a"/>
+      <SC label="Rate" value={items.length>0?`${Math.round(doneCnt/items.length*100)}%`:"--"} color={doneCnt===items.length&&items.length>0?"#1a7a4a":"#e67e22"}/>
+      <SC label="Overdue" value={overdueCnt} color={overdueCnt>0?"#c0392b":"#aaa"}/>
+    </div>
+    <div style={{display:"flex",gap:7,marginBottom:14,flexWrap:"wrap"}}>
+      {[["all",`All (${items.length})`],["pending",`Pending (${items.filter(i=>!i.done).length})`],["overdue",`Overdue (${overdueCnt})`],["done",`Done (${doneCnt})`]].map(([k,l])=>(
+        <button key={k} onClick={()=>setFilter(k)} style={{padding:"6px 13px",borderRadius:20,border:"2px solid",cursor:"pointer",fontSize:12,borderColor:filter===k?"#1a1a1c":"#ddd",background:filter===k?"#1a1a1c":"#fff",color:filter===k?"#fff":"#333"}}>{l}</button>
+      ))}
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:24}}>
+      {filtered.map(({v,client,done})=>{
+        const inits=localInitials[v.id]??savedInitials[v.id]??"";
+        const isOverdue=overdueIds.has(v.id)&&!done&&isToday;
+        const latestNote=careNotes.filter(n=>n.clientId===client.id).slice(-1)[0];
+        return(<div key={v.id} style={{display:"flex",alignItems:"flex-start",gap:9,padding:"9px 12px",borderRadius:9,background:done?"#f0faf4":isOverdue?"#fff8f8":"#fff",boxShadow:"0 1px 4px rgba(0,0,0,0.06)",borderLeft:v.requiresBoth?"4px solid #c0392b":isOverdue?"4px solid #e67e22":"4px solid transparent"}}>
+          <button onClick={()=>toggleVisit(v.id)} style={{width:24,height:24,borderRadius:6,border:`2px solid ${done?"#1a7a4a":"#ddd"}`,background:done?"#1a7a4a":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,color:"#fff",cursor:"pointer",marginTop:2}}>{done?"v":""}</button>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontWeight:"bold",fontSize:12,color:done?"#888":"#1a1a1c",textDecoration:done?"line-through":"none"}}>
+              {v.time} - {client.name} <span style={{color:"#999",fontWeight:"normal"}}>Rm {client.room}</span>
+              {isOverdue&&<span style={{marginLeft:7,fontSize:10,background:"#fdecea",color:"#c0392b",padding:"1px 5px",borderRadius:5}}>OVERDUE</span>}
+            </div>
+            <div style={{fontSize:11,color:done?"#aaa":"#444",marginTop:1}}>{v.task}</div>
+            {latestNote&&<div style={{fontSize:10,color:"#7d6a00",background:"#fffbea",borderRadius:4,padding:"2px 6px",marginTop:2}}>Note: {latestNote.text.slice(0,60)}{latestNote.text.length>60?"...":""}</div>}
+            <div style={{display:"flex",gap:5,marginTop:3,flexWrap:"wrap",alignItems:"center"}}>
+              <span style={{fontSize:10,padding:"1px 5px",borderRadius:7,background:(CG_COLOR[v.caregiver]||"#888")+"22",color:CG_COLOR[v.caregiver]||"#888"}}>{v.caregiver}</span>
+              <span style={{fontSize:10,color:LOC_COLOR[client.location]||"#888"}}>{client.location==="Renaissance on Peachtree"?"ROP":"PIB"} {v.duration}min</span>
+              {v.requiresBoth&&<span style={{fontSize:10,padding:"1px 5px",borderRadius:7,background:"#fdecea",color:"#c0392b",fontWeight:"bold"}}>BOTH CGs</span>}
+              <button onClick={()=>{setNoteVisitId(v.id);setNoteText("");}} style={{fontSize:10,padding:"1px 7px",borderRadius:7,background:"#f0f4ff",color:"#2471a3",border:"none",cursor:"pointer"}}>+ Note</button>
+            </div>
+          </div>
+          <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+            <div style={{fontSize:9,color:"#aaa",textTransform:"uppercase",letterSpacing:1}}>Init</div>
+            <input value={inits} onChange={e=>handleInitials(v.id,e.target.value)} placeholder="--" maxLength={3} style={{width:40,textAlign:"center",padding:"4px 2px",borderRadius:5,border:"2px solid #e0e0e0",fontSize:13,fontWeight:"bold",background:inits?"#fffbf0":"#fff"}}/>
+          </div>
+        </div>);
+      })}
+      {filtered.length===0&&<div style={{textAlign:"center",color:"#aaa",padding:36}}>No tasks in this view.</div>}
+    </div>
+    {isCG&&(<div style={{background:"#fff",borderRadius:10,padding:18,boxShadow:"0 2px 8px rgba(0,0,0,0.07)"}}>
+      <div style={{fontWeight:"bold",fontSize:14,marginBottom:4}}>Daily Caregiver Sign-Off</div>
+      <div style={{fontSize:12,color:"#888",marginBottom:12}}>{fmtDate(selectedDate)} -- {doneCnt} of {items.length} completed</div>
+      {existingSig?(<div>
+        <img src={existingSig.sig} alt="Signature" style={{height:60,border:"1px solid #e0e0e0",borderRadius:7,display:"block",marginBottom:6}}/>
+        <div style={{fontSize:11,color:"#888"}}>Signed {new Date(existingSig.signedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</div>
+        <button onClick={()=>setShowSigPad(true)} style={{...GB,marginTop:8,fontSize:11,padding:"5px 11px"}}>Update</button>
+      </div>):(<div>
+        <div style={{fontSize:12,color:"#c0392b",marginBottom:8}}>Not yet signed for this date</div>
+        <button onClick={()=>setShowSigPad(true)} style={PB}>Sign Daily Sheet</button>
+      </div>)}
+      {showSigPad&&<div style={{marginTop:12}}><SignatureCanvas onSave={handleSaveSig} onCancel={()=>setShowSigPad(false)} existing={existingSig?.sig}/></div>}
+    </div>)}
+    {noteVisitId&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}}>
+      <div style={{background:"#fff",borderRadius:12,padding:24,width:400,maxWidth:"90vw"}}>
+        <div style={{fontWeight:"bold",fontSize:14,marginBottom:4}}>Add Care Note</div>
+        <div style={{fontSize:11,color:"#888",marginBottom:10}}>{clients.find(c=>c.id===visits.find(v=>v.id===noteVisitId)?.clientId)?.name}</div>
+        <textarea value={noteText} onChange={e=>setNoteText(e.target.value)} rows={3} placeholder="Care note…" style={{...IS,resize:"vertical",marginBottom:10}}/>
+        <div style={{display:"flex",gap:7}}><button onClick={saveNote} style={PB}>Save</button><button onClick={()=>setNoteVisitId(null)} style={GB}>Cancel</button></div>
+      </div>
+    </div>)}
+  </div>);
+}
+
+function SignOffSheet({user,clients,visits,completions,selectedDate,setSelectedDate,signatures,saveSignatures}){
+  const[sigTarget,setSigTarget]=useState(null);
+  const canAdmin=user.role==="admin";
+  const canSupervise=user.role==="admin"||user.role==="supervisor";
+  const{ws,we}=getWeekRange(selectedDate);
+  const weekDays=[];let wd=new Date(ws+"T00:00:00");for(let i=0;i<7;i++){weekDays.push(wd.toISOString().split("T")[0]);wd.setDate(wd.getDate()+1);}
+  const daySummary=weekDays.map(date=>{
+    const sched=visits.filter(v=>isScheduledOn(v,date)&&clients.find(c=>c.id===v.clientId&&c.active));
+    const done=completions.filter(c=>c.date===date&&sched.find(v=>v.id===c.visitId));
+    return{date,scheduled:sched.length,done:done.length,cgSig:signatures[`cg-daily-${date}`]};
+  });
+  const weekKey=`week-${ws}`;
+  const totalSched=daySummary.reduce((s,d)=>s+d.scheduled,0);
+  const totalDone=daySummary.reduce((s,d)=>s+d.done,0);
+  const pct=totalSched>0?Math.round(totalDone/totalSched*100):0;
+  const handleSaveSig=(role,dataUrl)=>{saveSignatures({...signatures,[`${weekKey}-${role}`]:{sig:dataUrl,signedAt:new Date().toISOString(),signedBy:user.fullName,role}});setSigTarget(null);};
+  const sigLog=Object.entries(signatures).map(([k,v])=>({key:k,...v})).sort((a,b)=>new Date(b.signedAt)-new Date(a.signedAt));
+
+  return(<div>
+    <PH title="Sign-Off Sheet" subtitle={`Week of ${fmtDate(ws)} to ${fmtDate(we)}`}><input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)} style={DI}/></PH>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:22}}>
+      <SC label="Week Visits" value={totalSched} color="#2471a3"/>
+      <SC label="Completed" value={totalDone} color="#1a7a4a"/>
+      <SC label="Weekly Rate" value={`${pct}%`} color={pct>=90?"#1a7a4a":pct>=70?"#e67e22":"#c0392b"}/>
+    </div>
+    <div style={{background:"#fff",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,0.07)",marginBottom:20}}>
+      <div style={{padding:"12px 16px",borderBottom:"1px solid #f0f0f0",fontWeight:"bold",fontSize:13}}>Daily Log</div>
+      <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:460}}>
+        <thead><tr style={{background:"#f8f8f8"}}>{["Date","Day","Sched","Done","Rate","CG Signature"].map(h=><th key={h} style={TH}>{h}</th>)}</tr></thead>
+        <tbody>{daySummary.map(({date,scheduled,done,cgSig})=>{
+          const dpct=scheduled>0?Math.round(done/scheduled*100):null;
+          const dl=new Date(date+"T00:00:00");
+          return(<tr key={date} style={{borderBottom:"1px solid #f5f5f5",background:date===selectedDate?"#fffbf0":"#fff"}}>
+            <td style={TD}>{dl.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</td>
+            <td style={{...TD,fontWeight:"bold"}}>{dl.toLocaleDateString("en-US",{weekday:"short"})}</td>
+            <td style={TD}>{scheduled}</td><td style={{...TD,color:done===scheduled&&scheduled>0?"#1a7a4a":"#333"}}>{done}</td>
+            <td style={TD}>{dpct!==null?<PBar pct={dpct}/>:"--"}</td>
+            <td style={TD}>{cgSig?(<div style={{display:"flex",alignItems:"center",gap:5}}><img src={cgSig.sig} alt="sig" style={{height:30,border:"1px solid #e0e0e0",borderRadius:4}}/><span style={{fontSize:10,color:"#888"}}>{new Date(cgSig.signedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span></div>):<span style={{fontSize:10,color:"#c0392b"}}>Not signed</span>}</td>
+          </tr>);
+        })}</tbody>
+      </table></div>
+    </div>
+    <div style={{background:"#fff",borderRadius:10,padding:18,boxShadow:"0 2px 8px rgba(0,0,0,0.07)",marginBottom:20}}>
+      <div style={{fontWeight:"bold",fontSize:13,marginBottom:14}}>Weekly Sign-Off</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
+        {[{role:"supervisor",label:"Supervisor",color:"#2471a3",canSign:canSupervise},{role:"admin",label:"Administrator",color:"#c0392b",canSign:canAdmin},{role:"nurse",label:"Nurse",color:"#8e44ad",canSign:canAdmin}].map(({role,label,color,canSign})=>{
+          const sd=signatures[`${weekKey}-${role}`];
+          return(<div key={role} style={{border:`2px solid ${color}33`,borderRadius:9,padding:14}}>
+            <div style={{fontSize:10,color,textTransform:"uppercase",letterSpacing:2,fontWeight:"bold",marginBottom:8}}>{label}</div>
+            {sd?(<div><img src={sd.sig} alt="sig" style={{height:54,border:"1px solid #e0e0e0",borderRadius:6,display:"block",marginBottom:5,maxWidth:"100%"}}/>
+              <div style={{fontSize:10,color:"#888"}}>{new Date(sd.signedAt).toLocaleDateString()} {new Date(sd.signedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</div>
+              {canSign&&<button onClick={()=>setSigTarget(role)} style={{...GB,fontSize:10,padding:"4px 9px",marginTop:5}}>Update</button>}
+            </div>):(<div>
+              <div style={{height:54,border:"2px dashed #e0e0e0",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:7}}><span style={{fontSize:11,color:"#bbb"}}>Awaiting</span></div>
+              {canSign?<button onClick={()=>setSigTarget(role)} style={{...PB,background:color,fontSize:11,padding:"6px 14px"}}>Sign Now</button>:<span style={{fontSize:10,color:"#bbb"}}>Not signed</span>}
+            </div>)}
+            {sigTarget===role&&<div style={{marginTop:9}}><SignatureCanvas onSave={d=>handleSaveSig(role,d)} onCancel={()=>setSigTarget(null)} existing={sd?.sig}/></div>}
+          </div>);
+        })}
+      </div>
+    </div>
+    {canSupervise&&sigLog.length>0&&(<div style={{background:"#fff",borderRadius:10,padding:18,boxShadow:"0 2px 8px rgba(0,0,0,0.07)"}}>
+      <div style={{fontWeight:"bold",fontSize:13,marginBottom:12}}>All-Time Signature Log</div>
+      <div style={{maxHeight:280,overflowY:"auto"}}><table style={{width:"100%",borderCollapse:"collapse"}}>
+        <thead><tr style={{background:"#f8f8f8"}}>{["Date/Time","Type","Signed By","Sig"].map(h=><th key={h} style={TH}>{h}</th>)}</tr></thead>
+        <tbody>{sigLog.slice(0,100).map(s=><tr key={s.key} style={{borderBottom:"1px solid #f5f5f5"}}>
+          <td style={TD}>{new Date(s.signedAt).toLocaleDateString()} {new Date(s.signedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</td>
+          <td style={TD}><span style={{fontSize:10,color:"#888"}}>{s.key.startsWith("cg-daily")?"Daily CG":"Weekly "+s.role}</span></td>
+          <td style={TD}>{s.signedBy||"--"}</td>
+          <td style={TD}><img src={s.sig} alt="sig" style={{height:24,border:"1px solid #e0e0e0",borderRadius:3}}/></td>
+        </tr>)}</tbody>
+      </table></div>
+    </div>)}
+  </div>);
+}
+
+function Reports({clients,visits,completions}){
+  const[rt,setRt]=useState("daily");const[rd,setRd]=useState(today());
+  const[rs,setRs]=useState(()=>{const d=new Date();d.setDate(d.getDate()-6);return d.toISOString().split("T")[0];});
+  const[re,setRe]=useState(today());
+  const ac=clients.filter(c=>c.active);
+  const getDays=(s,e)=>{const days=[];let d=new Date(s+"T00:00:00");const end=new Date(e+"T00:00:00");while(d<=end){days.push(d.toISOString().split("T")[0]);d.setDate(d.getDate()+1);}return days;};
+  const days=getDays(rs,re);
+  const gaps=[];days.slice(0,14).forEach(date=>ac.forEach(client=>visits.filter(v=>v.clientId===client.id&&isScheduledOn(v,date)).forEach(v=>{if(!completions.find(c=>c.date===date&&c.visitId===v.id))gaps.push({date,client,visit:v});})));
+  return(<div>
+    <PH title="Reports" subtitle="Analytics"/>
+    <div style={{display:"flex",gap:7,marginBottom:20,flexWrap:"wrap"}}>
+      {[["daily","Daily"],["client","By Client"],["gaps","Missed"],["initials","Initials Log"]].map(([k,l])=>(
+        <button key={k} onClick={()=>setRt(k)} style={{padding:"6px 14px",borderRadius:20,border:"2px solid",cursor:"pointer",fontSize:12,borderColor:rt===k?"#1a1a1c":"#ddd",background:rt===k?"#1a1a1c":"#fff",color:rt===k?"#fff":"#333"}}>{l}</button>
+      ))}
+    </div>
+    {rt==="daily"&&<>
+      <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:14}}><span style={{fontSize:12,color:"#888"}}>Date:</span><input type="date" value={rd} onChange={e=>setRd(e.target.value)} style={DI}/></div>
+      <div style={{background:"#fff",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,0.07)",overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:460}}>
+          <thead><tr style={{background:"#f8f8f8"}}>{["Client","Rm","Loc","Sched","Done","Miss","Rate"].map(h=><th key={h} style={TH}>{h}</th>)}</tr></thead>
+          <tbody>{ac.map(client=>{const sched=visits.filter(v=>v.clientId===client.id&&isScheduledOn(v,rd));const done=completions.filter(c=>c.date===rd&&sched.find(v=>v.id===c.visitId));const miss=sched.filter(v=>!completions.find(c=>c.date===rd&&c.visitId===v.id));if(!sched.length)return null;return(<tr key={client.id} style={{borderBottom:"1px solid #f5f5f5"}}><td style={TD}><strong>{client.name}</strong></td><td style={TD}>{client.room}</td><td style={TD}><span style={{fontSize:10,color:LOC_COLOR[client.location]}}>{client.location==="Renaissance on Peachtree"?"ROP":"PIB"}</span></td><td style={TD}>{sched.length}</td><td style={{...TD,color:"#1a7a4a"}}>{done.length}</td><td style={{...TD,color:miss.length>0?"#c0392b":"#888"}}>{miss.length}</td><td style={TD}><PBar pct={sched.length>0?Math.round(done.length/sched.length*100):0}/></td></tr>);})}</tbody>
+        </table>
+      </div>
+    </>}
+    {rt==="client"&&<>
+      <RP rangeStart={rs} rangeEnd={re} setRangeStart={setRs} setRangeEnd={setRe}/>
+      <div style={{background:"#fff",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,0.07)",overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:380}}>
+          <thead><tr style={{background:"#f8f8f8"}}>{["Client","Rm","Completed","Days","Avg/Day"].map(h=><th key={h} style={TH}>{h}</th>)}</tr></thead>
+          <tbody>{ac.map(client=>{const done=completions.filter(c=>c.date>=rs&&c.date<=re&&visits.find(v=>v.id===c.visitId&&v.clientId===client.id));const da=new Set(done.map(c=>c.date)).size;return(<tr key={client.id} style={{borderBottom:"1px solid #f5f5f5"}}><td style={TD}><strong>{client.name}</strong></td><td style={TD}>{client.room}</td><td style={{...TD,color:"#1a7a4a"}}>{done.length}</td><td style={TD}>{da}</td><td style={TD}>{da>0?(done.length/da).toFixed(1):"0"}</td></tr>);})}</tbody>
+        </table>
+      </div>
+    </>}
+    {rt==="gaps"&&<>
+      <RP rangeStart={rs} rangeEnd={re} setRangeStart={setRs} setRangeEnd={setRe}/>
+      <div style={{fontSize:12,color:"#888",marginBottom:9}}>{gaps.length} missed {days.length>14?"(first 14 days)":""}</div>
+      <div style={{background:"#fff",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,0.07)",maxHeight:460,overflowY:"auto",overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:460}}>
+          <thead style={{position:"sticky",top:0,background:"#f8f8f8"}}><tr>{["Date","Client","Rm","Time","Task","CG"].map(h=><th key={h} style={TH}>{h}</th>)}</tr></thead>
+          <tbody>{gaps.slice(0,200).map((g,i)=>(<tr key={i} style={{borderBottom:"1px solid #f5f5f5"}}><td style={TD}>{g.date}</td><td style={{...TD,fontWeight:"bold"}}>{g.client.name}</td><td style={TD}>{g.client.room}</td><td style={TD}>{g.visit.time}</td><td style={TD}>{g.visit.task.slice(0,45)}</td><td style={TD}><span style={{fontSize:10,padding:"1px 5px",borderRadius:6,background:(CG_COLOR[g.visit.caregiver]||"#888")+"22",color:CG_COLOR[g.visit.caregiver]||"#888"}}>{g.visit.caregiver}</span></td></tr>))}</tbody>
+        </table>
+      </div>
+    </>}
+    {rt==="initials"&&<>
+      <RP rangeStart={rs} rangeEnd={re} setRangeStart={setRs} setRangeEnd={setRe}/>
+      <div style={{background:"#fff",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,0.07)",maxHeight:460,overflowY:"auto",overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:460}}>
+          <thead style={{position:"sticky",top:0,background:"#f8f8f8"}}><tr>{["Date","Client","Time","Task","Initials","At"].map(h=><th key={h} style={TH}>{h}</th>)}</tr></thead>
+          <tbody>{completions.filter(c=>c.date>=rs&&c.date<=re&&c.initials).map((c,i)=>{const v=visits.find(x=>x.id===c.visitId);const cl=clients.find(x=>x.id===v?.clientId);return(<tr key={i} style={{borderBottom:"1px solid #f5f5f5"}}><td style={TD}>{c.date}</td><td style={TD}>{cl?.name||"--"}</td><td style={TD}>{v?.time||"--"}</td><td style={TD}>{v?.task?.slice(0,35)||"--"}</td><td style={{...TD,fontWeight:"bold",color:"#2471a3"}}>{c.initials}</td><td style={TD}>{c.completedAt?new Date(c.completedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"--"}</td></tr>);})}
+          </tbody>
+        </table>
+      </div>
+    </>}
+  </div>);
+}
+
+function CareNotesReport({clients,careNotes,saveCareNotes,user}){
+  const[filterClient,setFilterClient]=useState("");const[filterDate,setFilterDate]=useState("");
+  const canAdmin=user.role==="admin";
+  const filtered=careNotes.filter(n=>{if(filterClient&&n.clientId!==filterClient)return false;if(filterDate&&!n.addedAt.startsWith(filterDate))return false;return true;}).sort((a,b)=>new Date(b.addedAt)-new Date(a.addedAt));
+  return(<div>
+    <PH title="Care Notes" subtitle={`${filtered.length} notes`}/>
+    <div style={{display:"flex",gap:10,marginBottom:18,flexWrap:"wrap"}}>
+      <div><label style={LS}>Client</label>
+        <select value={filterClient} onChange={e=>setFilterClient(e.target.value)} style={{...IS,maxWidth:240}}>
+          <option value="">All Clients</option>
+          {clients.filter(c=>c.active).map(c=><option key={c.id} value={c.id}>{c.name} (Rm {c.room})</option>)}
+        </select>
+      </div>
+      <div><label style={LS}>Date</label><input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} style={DI}/></div>
+      {filterDate&&<button onClick={()=>setFilterDate("")} style={{...GB,alignSelf:"flex-end",padding:"6px 12px",fontSize:11}}>Clear</button>}
+    </div>
+    {filtered.length===0?<div style={{textAlign:"center",color:"#aaa",padding:40}}>No notes found.</div>:
+    <div style={{display:"flex",flexDirection:"column",gap:9}}>
+      {filtered.map(n=>{const client=clients.find(c=>c.id===n.clientId);return(<div key={n.id} style={{background:"#fff",borderRadius:9,padding:14,boxShadow:"0 1px 4px rgba(0,0,0,0.07)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:7}}>
+          <div><div style={{fontWeight:"bold",fontSize:13}}>{client?.name||"Unknown"} <span style={{fontWeight:"normal",color:"#888",fontSize:11}}>Rm {client?.room}</span></div>
+            <div style={{fontSize:10,color:"#888",marginTop:1}}>{new Date(n.addedAt).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})} {new Date(n.addedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})} - {n.addedBy}</div>
+          </div>
+          {canAdmin&&<button onClick={()=>{if(window.confirm("Delete?"))saveCareNotes(careNotes.filter(x=>x.id!==n.id));}} style={{...SB("#fef0ee","#c0392b"),fontSize:10,padding:"3px 8px"}}>Delete</button>}
+        </div>
+        <div style={{fontSize:12,color:"#333",lineHeight:1.5}}>{n.text}</div>
+      </div>);})}
+    </div>}
+  </div>);
+}
+
+function ClientMgr({clients,saveClients,visits,saveVisits}){
+  const[editing,setEditing]=useState(null);const[form,setForm]=useState({name:"",room:"",location:"Renaissance on Peachtree",notes:"",active:true});const[showForm,setShowForm]=useState(false);
+  const[showQV,setShowQV]=useState(null);const[qv,setQv]=useState({time:"",days:"Daily",task:"",duration:30,caregiver:"CG1"});const[tc,setTc]=useState(null);
+  const save=()=>{if(!form.name.trim())return;saveClients(editing?clients.map(c=>c.id===editing?{...c,...form}:c):[...clients,{id:`c${Date.now()}`,...form}]);setShowForm(false);};
+  const addVisit=()=>{
+    if(!qv.time.trim()||!qv.task.trim())return;
+    const existing=visits.filter(v=>v.clientId===showQV&&isScheduledOn(v,today()));
+    const dm=parseTime(qv.time);const conflict=existing.find(v=>Math.abs(parseTime(v.time)-dm)<15);
+    if(conflict){setTc({conflict,suggested:suggestTime(existing,dm)});return;}
+    saveVisits([...visits,{id:`v${Date.now()}`,clientId:showQV,...qv,requiresBoth:qv.caregiver==="BOTH"}]);
+    setShowQV(null);setTc(null);
+  };
+  return(<div>
+    <PH title="Manage Clients" subtitle={`${clients.filter(c=>c.active).length} active`}><button onClick={()=>{setEditing(null);setForm({name:"",room:"",location:"Renaissance on Peachtree",notes:"",active:true});setShowForm(true);}} style={PB}>+ Add Client</button></PH>
+    {showForm&&(<div style={{background:"#fff",borderRadius:10,padding:22,marginBottom:18,boxShadow:"0 2px 14px rgba(0,0,0,0.1)"}}>
+      <div style={{fontWeight:"bold",fontSize:14,marginBottom:14}}>{editing?"Edit":"New Client"}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:10}}><FLD label="Name *" value={form.name} onChange={v=>setForm({...form,name:v})} placeholder="Full name"/><FLD label="Room" value={form.room} onChange={v=>setForm({...form,room:v})} placeholder="Room #"/></div>
+      <div style={{marginBottom:10}}><label style={LS}>Location</label><select value={form.location} onChange={e=>setForm({...form,location:e.target.value})} style={IS}><option>Renaissance on Peachtree</option><option>The Piedmont at Buckhead</option></select></div>
+      <div style={{marginBottom:10}}><label style={LS}>Notes</label><textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} rows={2} style={{...IS,resize:"vertical"}} placeholder="Care instructions…"/></div>
+      <div style={{display:"flex",gap:8}}><button onClick={save} style={PB}>Save</button><button onClick={()=>setShowForm(false)} style={GB}>Cancel</button></div>
+    </div>)}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:12}}>
+      {clients.map(c=>(<div key={c.id} style={{background:"#fff",borderRadius:10,padding:16,boxShadow:"0 1px 6px rgba(0,0,0,0.07)",opacity:c.active?1:0.55}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+          <div><div style={{fontWeight:"bold",fontSize:13}}>{c.name}</div><div style={{fontSize:11,color:"#888"}}>Rm {c.room} - <span style={{color:LOC_COLOR[c.location]}}>{c.location==="Renaissance on Peachtree"?"ROP":"PIB"}</span></div></div>
+          <span style={{fontSize:10,color:c.active?"#1a7a4a":"#aaa"}}>{c.active?"Active":"Off"}</span>
+        </div>
+        {c.notes&&<div style={{fontSize:10,color:"#e67e22",background:"#fef9f0",borderRadius:4,padding:"2px 6px",marginBottom:7}}>{c.notes}</div>}
+        <div style={{display:"flex",gap:5,marginTop:7,flexWrap:"wrap"}}>
+          <button onClick={()=>{setEditing(c.id);setForm({name:c.name,room:c.room,location:c.location,notes:c.notes,active:c.active});setShowForm(true);}} style={SB("#f5f5f5","#333")}>Edit</button>
+          <button onClick={()=>{setShowQV(c.id);setQv({time:"",days:"Daily",task:"",duration:30,caregiver:"CG1"});setTc(null);}} style={SB("#f0f4ff","#2471a3")}>+ Visit</button>
+          <button onClick={()=>saveClients(clients.map(x=>x.id===c.id?{...x,active:!x.active}:x))} style={SB(c.active?"#fef0ee":"#f0faf4",c.active?"#c0392b":"#1a7a4a")}>{c.active?"Deactivate":"Activate"}</button>
+        </div>
+        {showQV===c.id&&(<div style={{marginTop:10,background:"#f8f9fa",borderRadius:7,padding:10}}>
+          <div style={{fontWeight:"bold",fontSize:11,marginBottom:7}}>Quick Add Visit Time</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:7}}>
+            <FLD label="Time" value={qv.time} onChange={v=>{setQv({...qv,time:v});setTc(null);}} placeholder="9:00 AM"/>
+            <div><label style={LS}>CG</label><select value={qv.caregiver} onChange={e=>setQv({...qv,caregiver:e.target.value})} style={IS}><option>CG1</option><option>CG2</option><option>BOTH</option></select></div>
+          </div>
+          <div style={{marginBottom:7}}><FLD label="Days" value={qv.days} onChange={v=>setQv({...qv,days:v})} placeholder="Daily"/></div>
+          <div style={{marginBottom:7}}><FLD label="Task" value={qv.task} onChange={v=>setQv({...qv,task:v})} placeholder="Care task…"/></div>
+          {tc&&(<div style={{background:"#fef0ee",borderRadius:5,padding:8,marginBottom:7,fontSize:11}}>
+            <div style={{color:"#c0392b",fontWeight:"bold"}}>Time conflict with {tc.conflict.time}</div>
+            {tc.suggested&&<div style={{marginTop:3}}>Suggested: <strong>{tc.suggested}</strong> <button onClick={()=>{setQv({...qv,time:tc.suggested});setTc(null);}} style={{...SB("#1a7a4a22","#1a7a4a"),fontSize:10,padding:"1px 7px",marginLeft:5}}>Use</button></div>}
+          </div>)}
+          <div style={{display:"flex",gap:5}}><button onClick={addVisit} style={{...PB,fontSize:11,padding:"6px 12px"}}>Add</button><button onClick={()=>{setShowQV(null);setTc(null);}} style={{...GB,fontSize:11,padding:"6px 12px"}}>Cancel</button></div>
+        </div>)}
+      </div>))}
+    </div>
+  </div>);
+}
+
+function ScheduleView({clients,visits,saveVisits}){
+  const[selClient,setSelClient]=useState(null);const[showForm,setShowForm]=useState(false);const[editing,setEditing]=useState(null);
+  const[form,setForm]=useState({time:"8:00 AM",caregiver:"CG1",days:"Daily",task:"",duration:30});const[tc,setTc]=useState(null);
+  const cv=selClient?visits.filter(v=>v.clientId===selClient):[];
+  const checkSave=()=>{
+    if(!form.task.trim()||!selClient)return;
+    const existing=visits.filter(v=>v.clientId===selClient&&v.id!==editing&&isScheduledOn(v,today()));
+    const dm=parseTime(form.time);const conflict=existing.find(v=>Math.abs(parseTime(v.time)-dm)<15);
+    if(conflict&&!editing){setTc({conflict,suggested:suggestTime(existing,dm)});return;}
+    saveVisits(editing?visits.map(v=>v.id===editing?{...v,...form,requiresBoth:form.caregiver==="BOTH"}:v):[...visits,{id:`v${Date.now()}`,clientId:selClient,...form,requiresBoth:form.caregiver==="BOTH"}]);
+    setShowForm(false);setTc(null);
+  };
+  return(<div>
+    <PH title="Visit Schedule" subtitle={`${visits.length} visits`}/>
+    <div style={{marginBottom:16}}><label style={LS}>Select Client</label>
+      <select value={selClient||""} onChange={e=>setSelClient(e.target.value||null)} style={{...IS,maxWidth:300}}>
+        <option value="">-- Choose client --</option>
+        {clients.filter(c=>c.active).map(c=><option key={c.id} value={c.id}>{c.name} (Rm {c.room})</option>)}
+      </select>
+    </div>
+    {selClient&&<>
+      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}><button onClick={()=>{setEditing(null);setForm({time:"8:00 AM",caregiver:"CG1",days:"Daily",task:"",duration:30});setShowForm(true);setTc(null);}} style={PB}>+ Add Visit</button></div>
+      {showForm&&(<div style={{background:"#fff",borderRadius:10,padding:18,marginBottom:14,boxShadow:"0 2px 14px rgba(0,0,0,0.1)"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10,marginBottom:10}}>
+          <FLD label="Time" value={form.time} onChange={v=>{setForm({...form,time:v});setTc(null);}} placeholder="9:00 AM"/>
+          <div><label style={LS}>CG</label><select value={form.caregiver} onChange={e=>setForm({...form,caregiver:e.target.value})} style={IS}><option>CG1</option><option>CG2</option><option>BOTH</option></select></div>
+          <FLD label="Days" value={form.days} onChange={v=>setForm({...form,days:v})} placeholder="Daily"/>
+          <div><label style={LS}>Duration</label><input type="number" value={form.duration} onChange={e=>setForm({...form,duration:parseInt(e.target.value)||15})} style={IS}/></div>
+        </div>
+        <div style={{marginBottom:10}}><FLD label="Task *" value={form.task} onChange={v=>setForm({...form,task:v})} placeholder="Describe task…"/></div>
+        {tc&&(<div style={{background:"#fef0ee",borderRadius:6,padding:9,marginBottom:9,fontSize:11}}>
+          <div style={{color:"#c0392b",fontWeight:"bold"}}>Time conflict with {tc.conflict.time}</div>
+          {tc.suggested&&<div style={{marginTop:3}}>Suggested: <strong>{tc.suggested}</strong> <button onClick={()=>{setForm({...form,time:tc.suggested});setTc(null);}} style={{...SB("#1a7a4a22","#1a7a4a"),fontSize:10,padding:"1px 7px",marginLeft:5}}>Use this</button></div>}
+        </div>)}
+        <div style={{display:"flex",gap:7}}><button onClick={checkSave} style={PB}>Save</button><button onClick={()=>{setShowForm(false);setTc(null);}} style={GB}>Cancel</button></div>
+      </div>)}
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {cv.sort((a,b)=>parseTime(a.time)-parseTime(b.time)).map(v=>(<div key={v.id} style={{background:"#fff",borderRadius:9,padding:"11px 14px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div><span style={{fontWeight:"bold",fontSize:12}}>{v.time}</span><span style={{fontSize:11,color:"#888",marginLeft:7}}>{v.days} {v.duration}min</span>{v.requiresBoth&&<span style={{fontSize:9,padding:"1px 5px",borderRadius:6,background:"#fdecea",color:"#c0392b",marginLeft:5}}>BOTH</span>}<div style={{fontSize:11,marginTop:2}}>{v.task}</div></div>
+          <div style={{display:"flex",gap:5}}>
+            <button onClick={()=>{setEditing(v.id);setForm({time:v.time,caregiver:v.caregiver,days:v.days,task:v.task,duration:v.duration});setShowForm(true);setTc(null);}} style={SB("#f5f5f5","#333")}>Edit</button>
+            <button onClick={()=>{if(window.confirm("Remove?"))saveVisits(visits.filter(x=>x.id!==v.id));}} style={SB("#fef0ee","#c0392b")}>Remove</button>
+          </div>
+        </div>))}
+      </div>
+    </>}
+  </div>);
+}
+
+function TeamMgr({users,saveUsers}){
+  const[showForm,setShowForm]=useState(false);const[editing,setEditing]=useState(null);const[form,setForm]=useState({fullName:"",role:"caregiver",pin:""});
+  const save=()=>{if(!form.fullName.trim()||!form.pin.trim())return;saveUsers(editing?users.map(u=>u.id===editing?{...u,...form}:u):[...users,{id:`u${Date.now()}`,...form}]);setShowForm(false);};
+  return(<div>
+    <PH title="Team" subtitle={`${users.length} members`}><button onClick={()=>{setEditing(null);setForm({fullName:"",role:"caregiver",pin:""});setShowForm(true);}} style={PB}>+ Add</button></PH>
+    {showForm&&(<div style={{background:"#fff",borderRadius:10,padding:22,marginBottom:18,boxShadow:"0 2px 14px rgba(0,0,0,0.1)"}}>
+      <div style={{fontWeight:"bold",fontSize:14,marginBottom:14}}>{editing?"Edit":"New Member"}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:10}}>
+        <FLD label="Name *" value={form.fullName} onChange={v=>setForm({...form,fullName:v})} placeholder="Jane Smith"/>
+        <div><label style={LS}>Role</label><select value={form.role} onChange={e=>setForm({...form,role:e.target.value})} style={IS}><option value="caregiver">Caregiver</option><option value="supervisor">Supervisor</option><option value="admin">Admin / Nurse</option></select></div>
+        <FLD label="PIN *" value={form.pin} onChange={v=>setForm({...form,pin:v})} placeholder="4-digit PIN"/>
+      </div>
+      <div style={{display:"flex",gap:7}}><button onClick={save} style={PB}>Save</button><button onClick={()=>setShowForm(false)} style={GB}>Cancel</button></div>
+    </div>)}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:12}}>
+      {users.map(u=>(<div key={u.id} style={{background:"#fff",borderRadius:10,padding:18,boxShadow:"0 1px 6px rgba(0,0,0,0.07)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:7}}>
+          <div><div style={{fontWeight:"bold",fontSize:14}}>{u.fullName}</div><div style={{fontSize:10,color:ROLE_COLOR[u.role],textTransform:"uppercase",letterSpacing:1,marginTop:2}}>{ROLE_LABEL[u.role]}</div></div>
+          <span style={{fontSize:11,color:"#888"}}>PIN: {u.pin}</span>
+        </div>
+        <div style={{display:"flex",gap:6,marginTop:9}}>
+          <button onClick={()=>{setEditing(u.id);setForm({fullName:u.fullName,role:u.role,pin:u.pin});setShowForm(true);}} style={SB("#f5f5f5","#333")}>Edit</button>
+          <button onClick={()=>{if(window.confirm("Remove?"))saveUsers(users.filter(x=>x.id!==u.id));}} style={SB("#fef0ee","#c0392b")}>Remove</button>
+        </div>
+      </div>))}
+    </div>
+  </div>);
+}
+
+function PH({title,subtitle,children}){return(<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:20}}><div><div style={{fontSize:22,fontWeight:"bold",color:"#1a1a1c"}}>{title}</div>{subtitle&&<div style={{fontSize:11,color:"#888",marginTop:2}}>{subtitle}</div>}</div>{children&&<div style={{display:"flex",gap:7,alignItems:"center"}}>{children}</div>}</div>);}
+function SC({label,value,color}){return(<div style={{background:"#fff",borderRadius:10,padding:"14px 18px",boxShadow:"0 1px 6px rgba(0,0,0,0.07)"}}><div style={{fontSize:10,color:"#888",textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>{label}</div><div style={{fontSize:24,fontWeight:"bold",color}}>{value}</div></div>);}
+function PBar({pct}){return(<div style={{height:4,background:"#f0f0f0",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:pct===100?"#1a7a4a":pct>=50?"#e67e22":"#c0392b",borderRadius:2}}/></div>);}
+function RP({rangeStart,rangeEnd,setRangeStart,setRangeEnd}){return(<div style={{display:"flex",alignItems:"center",gap:9,marginBottom:16,flexWrap:"wrap"}}><span style={{fontSize:12,color:"#888"}}>From:</span><input type="date" value={rangeStart} onChange={e=>setRangeStart(e.target.value)} style={DI}/><span style={{fontSize:12,color:"#888"}}>To:</span><input type="date" value={rangeEnd} onChange={e=>setRangeEnd(e.target.value)} style={DI}/></div>);}
+function FLD({label,value,onChange,placeholder}){return(<div><label style={LS}>{label}</label><input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={IS}/></div>);}
+
+const DI={padding:"7px 10px",borderRadius:6,border:"2px solid #e0e0e0",background:"#fff",fontSize:12};
+const IS={width:"100%",padding:"8px 10px",borderRadius:6,border:"2px solid #e8e8e8",fontSize:12,boxSizing:"border-box"};
+const LS={fontSize:10,color:"#888",display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:1};
+const PB={padding:"8px 16px",background:"#1a1a1c",color:"#fff",border:"none",borderRadius:6,cursor:"pointer",fontSize:12};
+const GB={padding:"8px 16px",background:"#f0f0f0",color:"#333",border:"none",borderRadius:6,cursor:"pointer",fontSize:12};
+const SB=(bg,color)=>({padding:"5px 10px",borderRadius:6,border:"none",background:bg,color,cursor:"pointer",fontSize:11});
+const TH={padding:"9px 12px",textAlign:"left",fontSize:10,textTransform:"uppercase",letterSpacing:1,color:"#888",borderBottom:"2px solid #f0f0f0"};
+const TD={padding:"9px 12px",fontSize:11,borderBottom:"1px solid #f8f8f8"};
+
+const root=ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App/>);
+</script>
+</body>
+</html>
